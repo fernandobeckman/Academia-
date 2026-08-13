@@ -232,21 +232,19 @@ jobs:
           </shape>
           EOF
 
-          # ícone placeholder (1x1 PNG transparente como base64)
-          mkdir -p twa/app/src/main/res/mipmap-xxxhdpi
-          python3 -c "
-          import base64, os
-          # PNG 1x1 transparent
-          png = bytes.fromhex('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489000000'
-                              '0a49444154789c6260000000020001e221bc330000000049454e44ae426082')
-          os.makedirs('twa/app/src/main/res/mipmap-mdpi', exist_ok=True)
-          os.makedirs('twa/app/src/main/res/mipmap-hdpi', exist_ok=True)
-          os.makedirs('twa/app/src/main/res/mipmap-xhdpi', exist_ok=True)
-          os.makedirs('twa/app/src/main/res/mipmap-xxhdpi', exist_ok=True)
-          os.makedirs('twa/app/src/main/res/mipmap-xxxhdpi', exist_ok=True)
-          for d in ['mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi']:
-              open(f'twa/app/src/main/res/mipmap-{d}/ic_launcher.png','wb').write(png)
-          "
+          # ícones reais baixados da PWA
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "twa/app/src/main/res/mipmap-$d"
+          done
+          curl -sL "https://fernandobeckman.github.io/Academia-/icon-192.png" \
+            -o twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          # copiar o mesmo ícone para todas as densidades
+          for d in mdpi hdpi xhdpi xxhdpi; do
+            cp twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png \
+               twa/app/src/main/res/mipmap-$d/ic_launcher.png
+          done
+          # verificar que o PNG é válido
+          file twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
           echo "Project structure created"
 
