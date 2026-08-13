@@ -657,6 +657,8 @@ function renderPainel(){
       _bars+='</div>';
     });
     _muscCard='<div class="dash-card"><div class="dash-card-hdr">Carga Muscular — Esta Semana</div>'+_bars+'</div>';
+  }else{
+    _muscCard='<div class="dash-card"><div class="dash-card-hdr">Carga Muscular</div><p style="color:var(--tx2);font-size:.78rem;text-align:center;padding:8px 0">Registre treinos para ver a carga semanal</p></div>';
   }
   const _allExIds=[];
   Object.values(WORKOUTS).forEach(function(exs){exs.forEach(function(ex){if(_allExIds.indexOf(ex.id)<0)_allExIds.push(ex.id);});});
@@ -676,6 +678,8 @@ function renderPainel(){
       _prRows+='</div>';
     });
     _prCard='<div class="dash-card"><div class="dash-card-hdr">🏆 Recordes Pessoais</div>'+_prRows+'</div>';
+  }else{
+    _prCard='<div class="dash-card"><div class="dash-card-hdr">🏆 Recordes Pessoais</div><p style="color:var(--tx2);font-size:.78rem;text-align:center;padding:8px 0">Registre séries com peso para ver seus recordes</p></div>';
   }
   const _MUSC_GROUPS=['peitoral','costas','ombros','biceps','triceps','pernas','gluteos','abdomen'];
   const _MUSC_REC=48;
@@ -693,7 +697,7 @@ function renderPainel(){
     _recoRows+='<span class="reco-status">'+status+'</span>';
     _recoRows+='</div>';
   });
-  const _recoCard=_recoRows?'<div class="dash-card"><div class="dash-card-hdr">Recuperação Muscular</div>'+_recoRows+'</div>':'';
+  const _recoCard=_recoRows?'<div class="dash-card"><div class="dash-card-hdr">Recuperação Muscular</div>'+_recoRows+'</div>':'<div class="dash-card"><div class="dash-card-hdr">Recuperação Muscular</div><p style="color:var(--tx2);font-size:.78rem;text-align:center;padding:8px 0">Registre treinos para monitorar a recuperação</p></div>';
   const _pesos=_pesoList().slice(-10).reverse();
   let _pesoRows='';
   _pesos.slice(0,5).forEach(function(p,i){
