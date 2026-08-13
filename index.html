@@ -194,6 +194,16 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 .prog-tabs{display:flex;gap:6px;margin:0 0 12px}
 .prog-tab{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:.8rem;font-weight:600;cursor:pointer}
 .prog-tab.active{background:var(--ol);border-color:var(--ol);color:#fff}
+.timer-presets{display:flex;gap:5px;margin:4px 0 6px}
+.timer-preset{flex:1;padding:5px 2px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:.72rem;font-weight:700;cursor:pointer}
+.timer-preset.active{border-color:var(--ol);color:var(--ol);background:rgba(107,158,82,.1)}
+.day-log-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;max-height:72vh;background:var(--bg);border-top:2px solid var(--bd);border-radius:20px 20px 0 0;z-index:300;display:none;flex-direction:column;box-shadow:0 -6px 32px rgba(0,0,0,.28)}
+.day-log-sheet.open{display:flex}
+.day-log-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.day-log-body{flex:1;overflow-y:auto;padding:12px 16px 28px}
+.day-log-ex{margin-bottom:14px}
+.day-log-ex-nm{font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:5px}
+.day-log-set{font-size:.78rem;color:var(--tx2);padding:2px 0 2px 10px}
 </style>
 </head>
 <body>
@@ -594,7 +604,7 @@ function renderPainel(){
     const iso=isoOf(y,m,d);const wd=new Date(y,m,d).getDay();const dd=DAY_BY_WD[wd];const isToday=iso===today;
     let badge='',dot='';
     if(dd){const log=DB.get(`workout:${iso}:${dd.id}`)||{};const exs=WORKOUTS[dd.id];const done=exs.filter(e=>log[e.id]?.done).length;const pct=Object.keys(log).length>0?Math.round((done/exs.length)*100):null;if(pct!==null){const bg=pct>=100?'#6B9E52':pct>=50?'#C45A1A':'#8C4012';badge=`<span class="cc-badge" style="background:${bg}">${pct}%</span>`;}else dot='<span class="cc-dot"></span>';}
-    cells+=`<div class="cc${isToday?' today':''}${dd?' click':''}" data-cal-day="${dd?dd.id:''}"><span class="cc-num">${d}</span>${badge||dot}</div>`;
+    cells+=`<div class="cc${isToday?' today':''}${dd?' click':''}" data-cal-day="${dd?dd.id:''}" data-cal-date="${iso}"><span class="cc-num">${d}</span>${badge||dot}</div>`;
   }
   const sk=calcStreak();const ws2=weeklyStats();
   const todDayObj=DAY_BY_WD[new Date().getDay()];
@@ -789,6 +799,41 @@ function renderDieta(){
   const customRows=custom.map((c,i)=>`<div class="cf-item"><span>${c.nm} — ${c.kcal||0} kcal, ${c.prot||0}g prot</span><button class="cf-del" data-del-custom="${i}">${ico('trash',13,'#7A8898')}</button></div>`).join('');
   return`<div class="dtypes">${pills}</div><div class="macro-grid"><div class="macro-card"><div class="macro-val" style="color:${overKcal?'#C45A1A':'#E8E4DC'}">${kcal.toLocaleString('pt-BR')}</div><div class="macro-lbl">kcal · meta ${dt.tgtKcal.toLocaleString('pt-BR')}</div><div class="macro-bar"><div class="macro-fill" style="width:${pctKcal}%;background:${overKcal?'#C45A1A':'#6B9E52'}"></div></div>${faltaKcal>0?`<div style="font-size:.6rem;color:var(--tx2);margin-top:5px">Faltam ${faltaKcal} kcal</div>`:`<div style="font-size:.6rem;color:var(--ol);margin-top:5px">Meta atingida</div>`}</div><div class="macro-card"><div class="macro-val" style="color:${overProt?'#C45A1A':'#E8E4DC'}">${prot}g</div><div class="macro-lbl">proteína · meta ${dt.tgtProt}g</div><div class="macro-bar"><div class="macro-fill" style="width:${pctProt}%;background:${overProt?'#C45A1A':'#6B9E52'}"></div></div>${faltaProt>0?`<div style="font-size:.6rem;color:var(--tx2);margin-top:5px">Faltam ${faltaProt}g prot</div>`:`<div style="font-size:.6rem;color:var(--ol);margin-top:5px">Meta atingida</div>`}</div><div class="macro-card"><div class="macro-val">${carb}g</div><div class="macro-lbl">carb</div><div class="macro-bar"><div class="macro-fill" style="width:${Math.min(100,(carb/400)*100)}%;background:#4A7AB8"></div></div><div style="font-size:.6rem;color:var(--tx2);margin-top:5px">${fat}g gordura</div></div></div><div class="custom-food"><div style="font-size:.78rem;font-weight:700;margin-bottom:2px">Adicionar alimento extra</div><div style="font-size:.7rem;color:var(--tx2)">Fugiu da dieta? Adicione aqui.</div><div class="cf-row"><input class="cf-in" id="cf-nm" placeholder="Nome" style="flex:2"><input class="cf-in" id="cf-kcal" type="number" inputmode="numeric" placeholder="kcal" style="flex:1"><input class="cf-in" id="cf-prot" type="number" inputmode="numeric" placeholder="prot g" style="flex:1"><button class="cf-add" data-add-custom>OK</button></div>${customRows?`<div style="margin-top:8px">${customRows}</div>`:''}</div>${mealCards}`;
 }
+function _lastSetsOf(exId,dayId){
+  const keys=DB.keys('workout:').filter(function(k){return k.endsWith(':'+dayId);}).sort().reverse();
+  if(!keys.length)return '';
+  const log=DB.get(keys[0])||{};
+  const sets=((log[exId]||{}).sets||[]).filter(function(s){return s.done;});
+  if(!sets.length)return '';
+  const date=keys[0].split(':')[1];
+  return '<div style="font-size:.68rem;color:var(--tx2);margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)">'
+    +'<span style="font-weight:700">'+date.slice(5)+':</span> '
+    +sets.map(function(s){return(s.kg||'—')+'kg×'+(s.reps||'—');}).join(' · ')
+    +'</div>';
+}
+function openDayLog(iso,dayId){
+  const log=DB.get('workout:'+iso+':'+dayId)||{};
+  const exs=WORKOUTS[dayId]||[];
+  const dt=new Date(iso+'T12:00:00');
+  const dlbl=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('day-log-title').textContent=dlbl.charAt(0).toUpperCase()+dlbl.slice(1);
+  let html='';
+  exs.forEach(function(ex){
+    const entry=log[ex.id];if(!entry)return;
+    const sets=(entry.sets||[]).filter(function(s){return s.done;});
+    if(!sets.length)return;
+    html+='<div class="day-log-ex">'
+      +'<div class="day-log-ex-nm">'+ex.n+'</div>'
+      +sets.map(function(s,i){
+        return '<div class="day-log-set">'+(i+1)+'. '+(s.kg||'—')+' kg × '+(s.reps||'—')+' reps'+(s.comment?' — '+s.comment:'')+' </div>';
+      }).join('')
+      +'</div>';
+  });
+  if(!html)html='<p style="color:var(--tx2);font-size:.85rem;text-align:center;padding-top:20px">Sem séries registradas.</p>';
+  document.getElementById('day-log-body').innerHTML=html;
+  document.getElementById('day-log-sheet').classList.add('open');
+}
+
 function renderProgresso(){
   const tab=S.progTab||'cargas';
   const tabNav='<div class="prog-tabs">'
@@ -810,7 +855,7 @@ function renderProgresso(){
         const prTxt=pr?'<span style="font-size:.67rem;font-weight:700;color:var(--ol);display:inline-block;margin:2px 0 4px">PR: '+pr.kg+'kg \u00d7 '+pr.reps+'</span>':'';
         dayCards+='<div class="dash-card" style="margin-bottom:10px">'
           +'<div style="font-size:.82rem;font-weight:700;color:var(--tx);margin-bottom:2px">'+ex.n+'</div>'
-          +prTxt+chart+'</div>';
+          +prTxt+chart+_lastSetsOf(ex.id,dayId)+'</div>';
       });
       if(dayCards){
         cardsHtml+='<div class="sec-head"><span class="sec-title">'+(DAY_LBL[dayId]||dayId)+'</span></div>'+dayCards;
@@ -962,16 +1007,18 @@ function renderDetailSets(){
     }).join('')+
     '</div>'
   ):'';
-  const tc=detailTimer&&detailTimer.rem!==null;const tv=tc?detailTimer.rem+'s':'90s';
+  const _progChart=exProgressChart(S.detailEx,S.detailDay);
+  const _presets=`<div class="timer-presets"><button class="timer-preset${S.restSecs===60?' active':''}" data-timer-preset="60">1 min</button><button class="timer-preset${(!S.restSecs||S.restSecs===90)?' active':''}" data-timer-preset="90">1:30</button><button class="timer-preset${S.restSecs===120?' active':''}" data-timer-preset="120">2 min</button><button class="timer-preset${S.restSecs===180?' active':''}" data-timer-preset="180">3 min</button></div>`;
+  const tc=detailTimer&&detailTimer.rem!==null;const tv=tc?detailTimer.rem+'s':(S.restSecs||90)+'s';
   document.getElementById('ed-sets-ui').innerHTML=
-    recHtml+tableHtml+
+    (_progChart?'<div style="margin:0 0 8px">'+_progChart+'</div>':'')+_presets+recHtml+tableHtml+
     `${(()=>{const _pl=ex?.t||'';const _pp=_pl.split('×');const _rg=_pp.length>1?_pp[1].trim():'—';const _sg=_pp.length>0?(parseInt(_pp[0])||4):4;return `<div class="ed-circ-row"><div class="ed-circ-item"><div class="ed-circ">${_rg}</div><div class="ed-circ-lbl">Reps<br>alvo</div></div><div class="ed-circ-item"><div class="ed-circ${tc?' running':' tc'}" id="ed-timer-num">${tv}</div><button class="ed-circ-lbl" style="cursor:pointer;background:none;border:none;color:var(--tx2);font-weight:700;font-size:.58rem;letter-spacing:.04em;text-transform:uppercase" id="ed-timer-btn">${tc?'Parar':'Descanso'}</button></div><div class="ed-circ-item"><div class="ed-circ">${done}/${_sg}</div><div class="ed-circ-lbl">Séries<br>feitas</div></div></div>`})()}<div class="ed-action-row"><button class="ed-adj-btn" data-adj-kg="-2.5">-2,5</button><div class="ed-input-wrap"><input class="ed-inp" id="ed-cur-kg" type="number" inputmode="decimal" placeholder="—"><div class="ed-input-lbl">KG</div></div><div class="ed-input-wrap"><input class="ed-inp" id="ed-cur-reps" type="number" inputmode="numeric" placeholder="—"><div class="ed-input-lbl">REPS</div></div><button class="ed-add-btn" id="ed-add-set">+</button><button class="ed-adj-btn" data-adj-kg="+2.5">+2,5</button></div>${prev.length?`<button class="ed-copy-prev" data-copy-prev>↑ Usar cargas da sessão anterior</button>`:''}<div class="set-comment-wrap"><textarea class="set-comment-inp" id="ed-set-comment" rows="2" placeholder="Comentário da série: falha muscular, dor no joelho..."></textarea></div>`+(()=>{const _hpfx='workout:',_hsfx=':'+S.detailDay,_htdy=todayISO();const _hks=DB.keys(_hpfx).filter(k=>k.endsWith(_hsfx)&&!k.includes(_htdy)).sort().reverse().slice(0,5);if(!_hks.length)return '';let _h='<div class="ex-hist-section">';_h+='<div class="ex-hist-hdr">';_h+='<span class="ex-hist-title">HISTÓRICO</span>';_h+='</div>';_hks.forEach(k=>{const _ld=DB.get(k);if(!_ld||!_ld[S.detailEx])return;const _ds=_ld[S.detailEx].sets||[];const _dn=_ds.filter(s=>s.done);if(!_dn.length)return;const _dstr=k.replace(_hpfx,'').replace(_hsfx,'');const _dt=new Date(_dstr+'T12:00:00');const _dlbl=_dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});_h+=`<div class="ex-hist-day">${_dlbl.charAt(0).toUpperCase()+_dlbl.slice(1)}</div>`;_dn.forEach((s,i)=>{_h+='<div class="ex-hist-row">';_h+=`<span class="ex-hist-num">${i+1}</span>`;_h+=`<span class="ex-hist-data">${s.kg||0} kg × ${s.reps||0} reps</span>`;const _tm=s.ts?new Date(s.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';_h+=`<span class="ex-hist-meta">${_tm}${s.comment?' · '+s.comment:''}</span>`;_h+='</div>';});});_h+='</div>';return _h;})();
 }
 
 function detailSaveSet(idx,field,val){const skey=`workout:${todayISO()}:${S.detailDay}`;const log=DB.get(skey)||{};const sets=[...(log[S.detailEx]?.sets||[])];if(!sets[idx])sets[idx]={};sets[idx][field]=val;DB.set(skey,{...log,[S.detailEx]:{...log[S.detailEx],sets}});}
 function closeDetail(){const _cd=document.getElementById('ed-desc');if(_cd)_cd.innerHTML='';document.getElementById('ex-detail').classList.remove('open');if(detailTimer.iid){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};}S.detailEx=null;S.detailDay=null;}
 function startTimer(exId){if(TIMERS[exId]?.iid)clearInterval(TIMERS[exId].iid);TIMERS[exId]={rem:90,iid:null};TIMERS[exId].iid=setInterval(()=>{if(!TIMERS[exId])return;TIMERS[exId].rem--;const lbl=document.getElementById(`tl-${exId}`);if(lbl)lbl.textContent=TIMERS[exId].rem+'s';if(TIMERS[exId].rem<=0){clearInterval(TIMERS[exId].iid);TIMERS[exId]={rem:null,iid:null};const btn=document.getElementById(`timer-${exId}`);if(btn)btn.classList.remove('run');if(lbl)lbl.textContent='90s';beepSound();if(navigator.vibrate)navigator.vibrate([200,100,200]);}},1000);}
-function startDetailTimer(){if(detailTimer.iid)clearInterval(detailTimer.iid);detailTimer.rem=90;const numEl=document.getElementById('ed-timer-num');const btnEl=document.getElementById('ed-timer-btn');if(btnEl)btnEl.textContent='Parar';detailTimer.iid=setInterval(()=>{detailTimer.rem--;if(numEl)numEl.textContent=detailTimer.rem+'s';if(detailTimer.rem<=0){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};if(numEl)numEl.textContent='90s';if(btnEl)btnEl.textContent='Iniciar';beepSound();if(navigator.vibrate)navigator.vibrate([200,100,200]);}},1000);}
+function startDetailTimer(){if(detailTimer.iid)clearInterval(detailTimer.iid);detailTimer.rem=S.restSecs||90;const numEl=document.getElementById('ed-timer-num');const btnEl=document.getElementById('ed-timer-btn');if(btnEl)btnEl.textContent='Parar';detailTimer.iid=setInterval(()=>{detailTimer.rem--;if(numEl)numEl.textContent=detailTimer.rem+'s';if(detailTimer.rem<=0){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};if(numEl)numEl.textContent=(S.restSecs||90)+'s';if(btnEl)btnEl.textContent='Iniciar';beepSound();if(navigator.vibrate)navigator.vibrate([200,100,200]);}},1000);}
 document.addEventListener('click',e=>{
   const t=e.target;
   if(t.closest('[data-iniciar-treino]')){S.tab='treino';S.treinoView='programs';mount();return;}
@@ -991,7 +1038,7 @@ document.addEventListener('click',e=>{
   const dp=t.closest('[data-day]');if(dp){S.treinoDay=dp.dataset.day;S.histEx=null;remountContent();return;}
   if(t.closest('[data-cal-prev]')){let{calYear:y,calMonth:m}=S;m--;if(m<0){m=11;y--;}S.calYear=y;S.calMonth=m;remountContent();return;}
   if(t.closest('[data-cal-next]')){let{calYear:y,calMonth:m}=S;m++;if(m>11){m=0;y++;}S.calYear=y;S.calMonth=m;remountContent();return;}
-  const cd=t.closest('[data-cal-day]');if(cd&&cd.dataset.calDay){S.tab='treino';S.treinoView='exercises';S.treinoProgram=S.treinoProgram||PROGRAMS[0]?.id||null;S.treinoDay=cd.dataset.calDay;S.histEx=null;mount();return;}
+  const cd=t.closest('[data-cal-day]');if(cd&&cd.dataset.calDay){const _cIso=cd.dataset.calDate,_cDay=cd.dataset.calDay;if(_cIso&&_cIso!==todayISO()&&DB.get('workout:'+_cIso+':'+_cDay)){openDayLog(_cIso,_cDay);return;}S.tab='treino';S.treinoView='exercises';S.treinoProgram=S.treinoProgram||PROGRAMS[0]?.id||null;S.treinoDay=_cDay;S.histEx=null;mount();return;}
   if(t.closest('[data-musc-prev]')){const d=new Date(S.muscWeek);d.setDate(d.getDate()-7);S.muscWeek=d;remountContent();return;}
   if(t.closest('[data-musc-next]')){const d=new Date(S.muscWeek);d.setDate(d.getDate()+7);S.muscWeek=d;remountContent();return;}
   const dt=t.closest('[data-diet-type]');if(dt){S.dietType=dt.dataset.dietType;remountContent();return;}
@@ -1005,6 +1052,7 @@ document.addEventListener('click',e=>{
   if(t.closest('[data-edit-goals]')){S.editingGoals=!S.editingGoals;remountContent();return;}
   if(t.closest('[data-save-peso]')){const inp=document.getElementById('peso-inp');const val=parseFloat(inp?inp.value:'');if(isNaN(val)||val<=0){alert('Peso inválido');return;}const pesos=_pesoList();pesos.push({date:todayISO(),value:val.toFixed(1)});DB.set('progress-weight',pesos);if(inp)inp.value='';remountContent();return;}
 if(t.closest('[data-save-goals]')){const w=parseInt(document.getElementById('gl-w')?.value)||4;const s=parseInt(document.getElementById('gl-s')?.value)||40;DB.set('goals',{workouts:Math.max(1,w),sets:Math.max(1,s)});S.editingGoals=false;remountContent();return;}
+  if(t.closest('[data-close-day-log]')){document.getElementById('day-log-sheet').classList.remove('open');return;}
   if(t.closest('[data-add-photo]')){document.getElementById('photo-input').click();return;}
   const dp2=t.closest('[data-del-photo]');if(dp2){const idx=parseInt(dp2.dataset.delPhoto);const photos=DB.get('progress-photos')||[];photos.splice(idx,1);DB.set('progress-photos',photos);remountContent();return;}
 });
@@ -1012,8 +1060,9 @@ document.addEventListener('input',e=>{if(e.target.id==='w-input')S.wInput=e.targ
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='w-input')document.querySelector('[data-add-weight]')?.click();if(e.key==='Escape')closeDetail();});
 document.getElementById('ex-detail').addEventListener('click',e=>{
   const t=e.target;
+  const _tp=t.closest('[data-timer-preset]');if(_tp){S.restSecs=parseInt(_tp.dataset.timerPreset);if(detailTimer.iid){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};}renderDetailSets();return;}
   if(t.closest('[data-close-detail]')){closeDetail();return;}
-  if(t.closest('#ed-timer-btn')){if(detailTimer.iid){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};document.getElementById('ed-timer-num').textContent='90s';document.getElementById('ed-timer-btn').textContent='Iniciar';}else{startDetailTimer();}return;}
+  if(t.closest('#ed-timer-btn')){if(detailTimer.iid){clearInterval(detailTimer.iid);detailTimer={rem:null,iid:null};document.getElementById('ed-timer-num').textContent=(S.restSecs||90)+'s';document.getElementById('ed-timer-btn').textContent='Iniciar';}else{startDetailTimer();}return;}
   if(t.closest('#ed-add-set')){
     const skey=`workout:${todayISO()}:${S.detailDay}`;
     const log=DB.get(skey)||{};
@@ -1057,5 +1106,6 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 initOnboarding();
 mount();
 </script>
+<div id="day-log-sheet"><div class="day-log-head"><span id="day-log-title" style="font-weight:800;font-size:1rem"></span><button data-close-day-log style="background:none;border:none;color:var(--tx2);font-size:1.5rem;cursor:pointer;line-height:1">×</button></div><div class="day-log-body" id="day-log-body"></div></div>
 </body>
 </html>
