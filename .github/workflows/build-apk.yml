@@ -108,6 +108,14 @@ jobs:
           }
           EOF
 
+          # gradle.properties
+          cat > twa/gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          android.suppressUnsupportedCompileSdk=34
+          org.gradle.jvmargs=-Xmx2048m
+          EOF
+
           # AndroidManifest.xml
           cat > twa/app/src/main/AndroidManifest.xml << 'MANIFEST'
           <?xml version="1.0" encoding="utf-8"?>
