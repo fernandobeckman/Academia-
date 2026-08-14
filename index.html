@@ -1301,6 +1301,57 @@ async function _mvInit(){
     if(ov)ov.innerHTML='<div style="color:var(--tx2);font-size:.82rem;text-align:center;padding:24px">Erro ao carregar modelo 3D.<br><button onclick="_mvInit()" style="margin-top:10px;padding:8px 20px;background:#C45A1A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.84rem">Tentar novamente</button></div>';
   }
 }
+function _heatmapHtml(gc,gmax){
+  function col(g){const c=gc[g]||0;if(!c)return'rgba(255,255,255,0.07)';const t=c/gmax;return t>.66?'#E83828':t>.33?'#FF9A00':'#2688FA';}
+  const sk='rgba(255,255,255,0.07)';
+  function front(){return`<svg viewBox="0 0 110 232" style="width:100%">
+    <ellipse cx="55" cy="18" rx="13" ry="16" fill="${sk}"/>
+    <rect x="49" y="33" width="12" height="9" fill="${sk}"/>
+    <ellipse cx="26" cy="57" rx="14" ry="11" fill="${col('shoulders')}"/>
+    <ellipse cx="84" cy="57" rx="14" ry="11" fill="${col('shoulders')}"/>
+    <ellipse cx="55" cy="70" rx="25" ry="17" fill="${col('chest')}"/>
+    <rect x="34" y="86" width="42" height="30" rx="6" fill="${col('core')}"/>
+    <ellipse cx="17" cy="83" rx="9" ry="20" fill="${col('biceps')}"/>
+    <ellipse cx="93" cy="83" rx="9" ry="20" fill="${col('biceps')}"/>
+    <ellipse cx="13" cy="115" rx="7" ry="16" fill="${col('forearm')}"/>
+    <ellipse cx="97" cy="115" rx="7" ry="16" fill="${col('forearm')}"/>
+    <rect x="33" y="115" width="44" height="15" rx="8" fill="${sk}"/>
+    <ellipse cx="44" cy="158" rx="17" ry="27" fill="${col('quads')}"/>
+    <ellipse cx="66" cy="158" rx="17" ry="27" fill="${col('quads')}"/>
+    <ellipse cx="44" cy="201" rx="11" ry="17" fill="${col('calves')}"/>
+    <ellipse cx="66" cy="201" rx="11" ry="17" fill="${col('calves')}"/>
+  </svg>`;}
+  function back(){return`<svg viewBox="0 0 110 232" style="width:100%">
+    <ellipse cx="55" cy="18" rx="13" ry="16" fill="${sk}"/>
+    <rect x="49" y="33" width="12" height="9" fill="${sk}"/>
+    <ellipse cx="55" cy="52" rx="22" ry="11" fill="${col('trapezius')}"/>
+    <ellipse cx="26" cy="57" rx="14" ry="11" fill="${col('shoulders')}"/>
+    <ellipse cx="84" cy="57" rx="14" ry="11" fill="${col('shoulders')}"/>
+    <ellipse cx="55" cy="82" rx="27" ry="23" fill="${col('back')}"/>
+    <ellipse cx="16" cy="85" rx="9" ry="21" fill="${col('triceps')}"/>
+    <ellipse cx="94" cy="85" rx="9" ry="21" fill="${col('triceps')}"/>
+    <ellipse cx="12" cy="117" rx="7" ry="16" fill="${col('forearm')}"/>
+    <ellipse cx="98" cy="117" rx="7" ry="16" fill="${col('forearm')}"/>
+    <ellipse cx="44" cy="126" rx="18" ry="14" fill="${col('glutes')}"/>
+    <ellipse cx="66" cy="126" rx="18" ry="14" fill="${col('glutes')}"/>
+    <ellipse cx="44" cy="161" rx="17" ry="27" fill="${col('hamstrings')}"/>
+    <ellipse cx="66" cy="161" rx="17" ry="27" fill="${col('hamstrings')}"/>
+    <ellipse cx="44" cy="201" rx="11" ry="17" fill="${col('calves')}"/>
+    <ellipse cx="66" cy="201" rx="11" ry="17" fill="${col('calves')}"/>
+  </svg>`;}
+  return`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 10px 10px;margin-top:10px">
+    <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);margin-bottom:10px;text-align:center">Mapa Muscular</div>
+    <div style="display:flex;justify-content:center;gap:12px">
+      <div style="flex:1;max-width:130px;text-align:center">${front()}<div style="font-size:.52rem;color:var(--tx2);margin-top:3px;letter-spacing:.07em;text-transform:uppercase">Frente</div></div>
+      <div style="flex:1;max-width:130px;text-align:center">${back()}<div style="font-size:.52rem;color:var(--tx2);margin-top:3px;letter-spacing:.07em;text-transform:uppercase">Costas</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;margin-top:10px;padding:0 2px">
+      <span style="font-size:.58rem;color:var(--tx2);white-space:nowrap">Sem treino</span>
+      <div style="flex:1;height:5px;border-radius:3px;background:linear-gradient(to right,#2688FA,#FF9A00,#E83828)"></div>
+      <span style="font-size:.58rem;color:var(--tx2);white-space:nowrap">Alta freq.</span>
+    </div>
+  </div>`;
+}
 function renderMusculos(){
   const per=S.muscPeriod||'week';
   const perOpts=[{id:'week',lb:'Semana'},{id:'month',lb:'Mês'},{id:'3mo',lb:'3 Meses'},{id:'all',lb:'Sempre'}];
@@ -1310,7 +1361,7 @@ function renderMusculos(){
   const barList=sorted.map(([g,c])=>{const t=c/gmax;const col=t>0.66?'#E83828':t>0.33?'#C45A1A':'#2688FA';return`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="min-width:88px;font-size:.78rem;color:var(--tx2)">${MLBL[g]||g}</span><div style="flex:1;background:var(--bd);border-radius:2px;height:5px"><div style="width:${Math.round(t*100)}%;height:100%;background:${col};border-radius:2px"></div></div><span style="font-family:var(--mo);font-size:.72rem;color:${col};min-width:22px;text-align:right">${c}×</span></div>`;}).join('');
   const legend=`<div class="mv-legend"><div class="mv-legend-dot" style="background:var(--bd);border:1px solid var(--tx2)"></div>Sem registro&ensp;<div class="mv-legend-dot" style="background:#2688FA"></div>Baixo&ensp;<div class="mv-legend-dot" style="background:#FF9A00"></div>Moderado&ensp;<div class="mv-legend-dot" style="background:#E83828"></div>Alto</div>`;
   const viewBtns=`<div class="mv-views"><button class="mv-view-btn" data-mv-view="front">Frente</button><button class="mv-view-btn" data-mv-view="back">Costas</button><button class="mv-view-btn" data-mv-view="left">Esq</button><button class="mv-view-btn" data-mv-view="right">Dir</button><button class="mv-view-btn" data-mv-view="reset">↺</button></div>`;
-  return`<div class="h2" style="margin-bottom:10px">Músculos</div><div class="mv-period-row">${perBar}</div>${legend}<div class="mv-wrap"><canvas id="mv-canvas" class="mv-canvas" style="height:430px"></canvas>${viewBtns}<div id="mv-loading" class="mv-loading-overlay"><div class="mv-spinner"></div><div style="font-size:.8rem;color:var(--tx2);margin-top:6px">Carregando modelo 3D…</div></div></div><div id="mv-info" class="mv-info" style="display:none"></div>${sorted.length?`<div style="margin-top:6px">${barList}</div>`:'<p style="color:var(--tx2);font-size:.84rem;text-align:center;padding:16px 0">Nenhum exercício registrado neste período.</p>'}`;
+  return`<div class="h2" style="margin-bottom:10px">Músculos</div><div class="mv-period-row">${perBar}</div>${legend}<div class="mv-wrap"><canvas id="mv-canvas" class="mv-canvas" style="height:430px"></canvas>${viewBtns}<div id="mv-loading" class="mv-loading-overlay"><div class="mv-spinner"></div><div style="font-size:.8rem;color:var(--tx2);margin-top:6px">Carregando modelo 3D…</div></div></div><div id="mv-info" class="mv-info" style="display:none"></div>${_heatmapHtml(gc,gmax)}${sorted.length?`<div style="margin-top:6px">${barList}</div>`:'<p style="color:var(--tx2);font-size:.84rem;text-align:center;padding:16px 0">Nenhum exercício registrado neste período.</p>'}`;
 }
 // ── Sistema de Dieta ─────────────────────────────────────────────────────────
 function _dUid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
