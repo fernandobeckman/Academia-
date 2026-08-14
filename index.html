@@ -335,7 +335,7 @@ const MEALS={
 };
 const DB={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch{return null}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(window._fbWrite)window._fbWrite(k,JSON.stringify(v));}catch{}},
   keys(p){try{return Object.keys(localStorage).filter(k=>k.startsWith(p))}catch{return[]}},
 };
 const pad2=n=>String(n).padStart(2,'0');
@@ -1134,5 +1134,51 @@ initOnboarding();
 mount();
 </script>
 <div id="day-log-sheet"><div class="day-log-head"><span id="day-log-title" style="font-weight:800;font-size:1rem"></span><button data-close-day-log style="background:none;border:none;color:var(--tx2);font-size:1.5rem;cursor:pointer;line-height:1">×</button></div><div class="day-log-body" id="day-log-body"></div></div>
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+import{getAuth,signInAnonymously}from'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+import{getFirestore,doc,setDoc,getDocs,collection,serverTimestamp}from'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+const _FCG={apiKey:'AIzaSyCehYnS2QK_8gFip4bggqTixvqalrrPSPA',authDomain:'app-academia2000.firebaseapp.com',
+  projectId:'app-academia2000',storageBucket:'app-academia2000.firebasestorage.app',
+  messagingSenderId:'671965618443',appId:'1:671965618443:web:9f89509781f44d86fd820e'};
+
+// Encode/decode localStorage keys para IDs de documento Firestore
+const _encK=k=>encodeURIComponent(k).replace(/%/g,'_');
+const _decK=k=>decodeURIComponent(k.replace(/_/g,'%'));
+
+const _app=initializeApp(_FCG);
+const _db=getFirestore(_app);
+const _auth=getAuth(_app);
+
+// Expõe função de escrita para DB.set()
+window._fbWrite=(k,vStr)=>{
+  if(!window._fbUid)return;
+  setDoc(doc(_db,'users',window._fbUid,'data',_encK(k)),{v:vStr,ts:serverTimestamp()}).catch(()=>{});
+};
+
+(async()=>{
+  try{
+    const cred=await signInAnonymously(_auth);
+    window._fbUid=cred.user.uid;
+    localStorage.setItem('_fb_uid',window._fbUid);
+    // Puxa dados do Firestore → copia para localStorage se chave ausente (novo dispositivo)
+    const snap=await getDocs(collection(_db,'users',window._fbUid,'data'));
+    let changed=false;
+    snap.forEach(d=>{
+      const k=_decK(d.id);
+      if(localStorage.getItem(k)===null&&d.data().v!=null){
+        localStorage.setItem(k,d.data().v);
+        changed=true;
+      }
+    });
+    if(changed&&typeof remountContent==='function')remountContent();
+    console.log('[Firebase] sync OK uid='+window._fbUid+' docs='+snap.size+(changed?' (atualizado)':''));
+  }catch(e){
+    console.warn('[Firebase] offline, usando localStorage:',e.message);
+  }
+})();
+</script>
+
 </body>
 </html>
