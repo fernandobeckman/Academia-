@@ -1,4 +1,4 @@
-const CACHE_NAME = "bulk-log-v4";
+const CACHE_NAME = "bulk-log-v5";
 const ASSETS = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./musc-map.jpg"];
 
 self.addEventListener("install", (event) => {
@@ -18,6 +18,20 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  // Não interceptar requisições cross-origin (Firebase Auth usa iframes de firebaseapp.com)
+  if (url.origin !== location.origin) return;
+
+  // Network-first para navegação (retorno do redirect OAuth precisa de HTML fresco)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  // Cache-first para assets estáticos
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
