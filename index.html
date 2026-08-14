@@ -1144,8 +1144,8 @@ const _FCG={apiKey:'AIzaSyCehYnS2QK_8gFip4bggqTixvqalrrPSPA',authDomain:'app-aca
   messagingSenderId:'671965618443',appId:'1:671965618443:web:9f89509781f44d86fd820e'};
 
 // Encode/decode localStorage keys para IDs de documento Firestore
-const _encK=k=>encodeURIComponent(k).replace(/%/g,'_');
-const _decK=k=>decodeURIComponent(k.replace(/_/g,'%'));
+const _encK=k=>k.replace(/:/g,'__C__').replace(/\./g,'__D__');
+const _decK=k=>k.replace(/__C__/g,':').replace(/__D__/g,'.');
 
 const _app=initializeApp(_FCG);
 const _db=getFirestore(_app);
