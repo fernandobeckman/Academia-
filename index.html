@@ -470,7 +470,7 @@ const EX_MUS={
   f1:['back'],f2:['back'],f3:['back'],f4:['hamstrings','back'],f5:['forearm'],f6:['biceps'],f7:['back'],f8:['back'],f9:['core'],f10:['core'],
 };
 const MLBL={chest:'Peitoral',shoulders:'Ombros',back:'Costas',biceps:'Bíceps',triceps:'Tríceps',forearm:'Antebraço',trapezius:'Trapézio',quads:'Quadríceps',hamstrings:'Posterior',glutes:'Glúteos',calves:'Panturrilha',core:'Core'};
-const _MV_CDN='https://cdn.jsdelivr.net/npm/three@0.169.0/';
+const _MV_CDN='https://esm.sh/three@0.169.0';
 const _MV_GLB='models/modelo-muscular-padrao.glb';
 const _GB='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 const EX_GIF={
@@ -1239,7 +1239,7 @@ async function _mvInit(){
   try{
     if(!_mvTHREE){
       const CDN=_MV_CDN;
-      const[T,G,O]=await Promise.all([import(CDN+'build/three.module.js'),import(CDN+'examples/jsm/loaders/GLTFLoader.js'),import(CDN+'examples/jsm/controls/OrbitControls.js')]);
+      const[T,G,O]=await Promise.all([import(CDN),import(CDN+'/examples/jsm/loaders/GLTFLoader'),import(CDN+'/examples/jsm/controls/OrbitControls')]);
       _mvTHREE=T;_mvGLTFL=G.GLTFLoader;_mvORBIT=O.OrbitControls;
     }
     if(mid!==_mvMountId)return;
