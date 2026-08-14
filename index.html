@@ -2526,16 +2526,17 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
       var _db=firebase.firestore();
       var _gprov=new firebase.auth.GoogleAuthProvider();
 
+      // Usar sessionStorage em vez de IndexedDB (evita erro "Database is closing" no Edge/PWA)
+      _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
+
+      // Habilitar botao imediatamente (popup nao precisa esperar getRedirectResult)
+      window._fbEnableBtnOnce();
+
       window._fbWrite=function(k,vStr){
         if(!window._fbUid)return;
         _db.collection('users').doc(window._fbUid).collection('data').doc(_encK(k))
           .set({v:vStr,ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
       };
-
-      _auth.getRedirectResult()
-        .then(function(r){if(r&&r.user)console.log('[Auth] redirect captado:',r.user.email);})
-        .catch(function(e){console.warn('[Auth] redirect err:',e.message);})
-        .finally(function(){window._fbEnableBtnOnce();});
 
       _auth.onAuthStateChanged(function(user){
         if(!user){_fbShowLogin();return;}
@@ -2553,9 +2554,10 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
       if(btn)btn.addEventListener('click',function(){
         var errEl=document.getElementById('fb-login-err');
         var lbl=document.getElementById('fb-btn-txt');
-        if(lbl)lbl.textContent='Redirecionando...';
+        if(lbl)lbl.textContent='Abrindo login...';
         if(errEl)errEl.textContent='';
-        _auth.signInWithRedirect(_gprov).catch(function(e){
+        // Popup: nao recarrega pagina, resultado retorna direto sem IndexedDB
+        _auth.signInWithPopup(_gprov).catch(function(e){
           if(errEl)errEl.textContent=(e.code||'erro')+': '+e.message.slice(0,120);
           if(lbl)lbl.textContent='Entrar com Google';
         });
