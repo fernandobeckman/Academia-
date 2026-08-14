@@ -1714,7 +1714,7 @@ function renderProgresso(){
       +`<div class="evo-card"><div class="evo-card-val">${_fmtVol(_totVol)}</div><div class="evo-card-lbl">Volume<br>levantado</div></div>`
       +`<div class="evo-card"><div class="evo-card-val">${_wkFreq}x</div><div class="evo-card-lbl">Freq. por<br>semana</div></div>`
       +`<div class="evo-card"><div class="evo-card-val">${_prCount}</div><div class="evo-card-lbl">PRs<br>registrados</div></div>`
-      +(_topPR?`<div class="evo-card wide"><div class="evo-card-val" style="font-size:1.1rem">🏆 ${_topPR.pr.kg}kg</div><div class="evo-card-lbl">Maior PR: ${(WORKOUTS[S.treinoDay||'mon']?.find?.(e=>e.id===_topPR.exId)||{n:_topPR.exId}).n||_topPR.exId}</div><div class="evo-card-sub">${_topPR.pr.reps||0} reps · ${_topPR.pr.date||''}</div></div>`:'')      +'</div>';
+      +(_topPR?`<div class="evo-card wide"><div class="evo-card-val" style="font-size:1.1rem">🏆 ${_topPR.pr.kg}kg</div><div class="evo-card-lbl">Maior PR: ${(Object.values(WORKOUTS).flat().find(e=>e.id===_topPR.exId)||{n:_topPR.exId}).n||_topPR.exId}</div><div class="evo-card-sub">${_topPR.pr.reps||0} reps · ${_topPR.pr.date||''}</div></div>`:'')      +'</div>';
     // Weekly volume chart (canvas)
     const _weeks=Object.keys(_byWeek).sort().slice(-12);
     const _weekVols=_weeks.map(w=>_byWeek[w]?.vol||0);
@@ -1831,59 +1831,63 @@ function _drawEvoCharts(){
         ctx.font='11px sans-serif';
         ctx.fillText('Registre s\u00e9ries com peso para ver o gr\u00e1fico.',W/2,H/2+12);
       } else {
-        const PAD_L=12,PAD_R=8,PAD_T=18,PAD_B=28;
+        // Eixo Y: 42px à esquerda para rótulos de volume
+        const PAD_L=42,PAD_R=8,PAD_T=16,PAD_B=26;
         const CW=W-PAD_L-PAD_R,CH=H-PAD_T-PAD_B;
         const n=weeks.length;
-        const gap=Math.max(2,Math.floor(CW/n*0.18));
-        const barW=Math.max(4,Math.floor((CW-(n-1)*gap)/n));
-        const totalBarsW=n*barW+(n-1)*gap;
+        // Largura máxima da barra: 56px para que n=1 não preencha o canvas todo
+        const MAX_BAR=56,MIN_GAP=4;
+        const barW=Math.min(MAX_BAR,Math.max(6,Math.floor((CW-MIN_GAP*Math.max(n-1,0))/Math.max(n,1))));
+        const gap=n>1?Math.max(MIN_GAP,Math.floor((CW-barW*n)/(n-1))):0;
+        const totalBarsW=barW*n+gap*Math.max(n-1,0);
         const startX=PAD_L+Math.floor((CW-totalBarsW)/2);
+        const fmtVol=v=>v>=1000?(Math.round(v/100)/10)+'t':Math.round(v)+'kg';
+        const MAX=maxWV||1;
 
-        // grade horizontal
+        // Eixo Y: grade + rótulos
         const GRIDS=4;
         for(let g=0;g<=GRIDS;g++){
           const y=PAD_T+Math.round(CH*g/GRIDS);
           ctx.strokeStyle=clrBd;ctx.lineWidth=0.5;ctx.setLineDash([3,3]);
           ctx.beginPath();ctx.moveTo(PAD_L,y);ctx.lineTo(W-PAD_R,y);ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle=clrTx2;ctx.font='8px monospace';ctx.textAlign='right';
+          ctx.fillText(fmtVol(MAX*(1-g/GRIDS)),PAD_L-3,y+3);
         }
-        ctx.setLineDash([]);
+        // Linha base
+        ctx.strokeStyle=clrBd;ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(PAD_L,PAD_T+CH);ctx.lineTo(W-PAD_R,PAD_T+CH);ctx.stroke();
 
-        // barras
-        const MAX=maxWV||1;
+        // Barras
         weekVols.forEach((v,i)=>{
           const x=startX+i*(barW+gap);
-          const barH=CH>0?Math.max(v>0?2:0,Math.round((v/MAX)*CH)):0;
+          const barH=CH>0?Math.max(v>0?3:0,Math.round((v/MAX)*CH)):0;
           const y=PAD_T+CH-barH;
           const isLast=(i===n-1);
-          // gradiente
+          const col=isLast?clrRu:'#4A7098';
           const grad=ctx.createLinearGradient(x,y,x,PAD_T+CH);
-          grad.addColorStop(0,isLast?clrRu:'#4A7098');
-          grad.addColorStop(1,isLast?'rgba(196,90,26,.35)':'rgba(74,112,152,.35)');
+          grad.addColorStop(0,col);
+          grad.addColorStop(1,isLast?'rgba(196,90,26,.3)':'rgba(74,112,152,.3)');
           ctx.fillStyle=grad;
-          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,barW,barH,isLast?[3,3,0,0]:[2,2,0,0]);ctx.fill();}
+          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,barW,barH,[3,3,0,0]);ctx.fill();}
           else{ctx.fillRect(x,y,barW,barH);}
-          // label de valor no topo (só se barra suficientemente alta e larga)
-          if(barH>16&&barW>20&&v>0){
-            const fmtVol=v>=1000?(Math.round(v/100)/10)+'t':Math.round(v)+'kg';
-            ctx.fillStyle=isLast?clrRu:clrTx;ctx.font=`bold ${Math.min(9,barW/3)}px monospace`;
-            ctx.textAlign='center';ctx.fillText(fmtVol,x+barW/2,y-3);
+          // Valor acima da barra (sempre visível se v>0)
+          if(v>0){
+            ctx.fillStyle=isLast?clrRu:clrTx2;
+            ctx.font='bold 9px monospace';ctx.textAlign='center';
+            ctx.fillText(fmtVol(v),x+barW/2,Math.max(PAD_T+10,y-3));
           }
         });
 
-        // labels de data no eixo X
+        // Labels datas eixo X
+        const _fmtWk=wnum=>{const d=new Date(wnum*7*86400000);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');};
         ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='center';
-        const _fmtWk=wnum=>{
-          // wnum é um número de semana (timestamp/604800000); converte para "dd/mm"
-          const d=new Date(wnum*7*86400000);
-          return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-        };
-        if(n<=6){
-          weeks.forEach((w,i)=>{const x=startX+i*(barW+gap)+barW/2;ctx.fillText(_fmtWk(parseInt(w)),x,H-6);});
+        if(n===1){
+          ctx.fillText(_fmtWk(parseInt(weeks[0])),startX+barW/2,H-4);
+        } else if(n<=8){
+          weeks.forEach((w,i)=>{ctx.fillText(_fmtWk(parseInt(w)),startX+i*(barW+gap)+barW/2,H-4);});
         } else {
-          // primeira, meio e última
-          [[0,'start'],[Math.floor(n/2),'center'],[n-1,'end']].forEach(([i,align])=>{
-            const x=startX+i*(barW+gap)+barW/2;ctx.textAlign='center';ctx.fillText(_fmtWk(parseInt(weeks[i])),x,H-6);
-          });
+          [0,Math.floor(n/2),n-1].forEach(i=>{ctx.fillText(_fmtWk(parseInt(weeks[i])),startX+i*(barW+gap)+barW/2,H-4);});
         }
       }
     }
