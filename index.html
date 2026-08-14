@@ -1174,6 +1174,27 @@ window._fbWrite=(k,vStr)=>{
     });
     if(changed&&typeof remountContent==='function')remountContent();
     console.log('[Firebase] sync OK uid='+window._fbUid+' docs='+snap.size+(changed?' (atualizado)':''));
+    // Migração única: sobe dados antigos do localStorage que não estão no Firestore
+    if(!localStorage.getItem('_fb_migrated')){
+      const remoteKeys=new Set();snap.forEach(d=>remoteKeys.add(_decK(d.id)));
+      const lsKeys=Object.keys(localStorage).filter(k=>!k.startsWith('_fb'));
+      const toMigrate=lsKeys.filter(k=>!remoteKeys.has(k));
+      if(toMigrate.length>0){
+        console.log('[Firebase] migrando '+toMigrate.length+' chaves do localStorage...');
+        const batch=[];
+        toMigrate.forEach(k=>{
+          const v=localStorage.getItem(k);
+          if(v!==null)batch.push(setDoc(doc(_db,'users',window._fbUid,'data',_encK(k)),{v,ts:serverTimestamp()}));
+        });
+        Promise.all(batch).then(()=>{
+          localStorage.setItem('_fb_migrated','1');
+          console.log('[Firebase] migração concluída: '+toMigrate.length+' registros enviados');
+        }).catch(e=>console.warn('[Firebase] erro na migração:',e));
+      }else{
+        localStorage.setItem('_fb_migrated','1');
+        console.log('[Firebase] nenhum dado novo para migrar');
+      }
+    }
   }catch(e){
     console.warn('[Firebase] offline, usando localStorage:',e.message);
   }
