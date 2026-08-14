@@ -1733,7 +1733,7 @@ function renderProgresso(){
     body=periodBar+cards+_wkChart+_exSelect+_prTable+_muscProg;
     // Canvas drawing deferred to next tick
     S._evoCanvasData={weeks:_weeks,weekVols:_weekVols,maxWV:_maxWV,selExId:_selExId,selDayId:_selDayId};
-    setTimeout(_drawEvoCharts,50);
+    requestAnimationFrame(_drawEvoCharts);
   }
   else if(tab==='corpo'){
     const entries=DB.get('weight-log')||[];
@@ -1800,70 +1800,167 @@ function renderProgresso(){
     +'<button data-export-csv class="exp-btn">'+ico('download',16,'#7A8898')+' Exportar treinos (CSV)</button>';
 }
 function _drawEvoCharts(){
-  if(!S._evoCanvasData)return;
-  const {weeks,weekVols,maxWV,selExId,selDayId}=S._evoCanvasData;
-  // Weekly volume bar chart
-  const vc=document.getElementById('evo-vol-canvas');
-  if(vc&&weeks.length){
-    vc.width=vc.parentElement.clientWidth-16;
-    const ctx=vc.getContext('2d');const W=vc.width,H=vc.height||120;
-    ctx.clearRect(0,0,W,H);
-    const bar=Math.max(4,Math.floor((W-10)/weeks.length)-3);const pad=Math.floor((W-bar*weeks.length)/Math.max(1,weeks.length+1));
+  // Use requestAnimationFrame so DOM is ready; retry if canvas not yet visible
+  if(!S._evoCanvasData){return;}
+  const raf=()=>{
+    const {weeks,weekVols,maxWV,selExId,selDayId}=S._evoCanvasData;
     const cs=getComputedStyle(document.documentElement);
-    const clrBd=cs.getPropertyValue('--bd').trim()||'#333';
+    const clrBd=cs.getPropertyValue('--bd').trim()||'#2a3540';
+    const clrBg=cs.getPropertyValue('--sf').trim()||'#1a2430';
     const clrRu=cs.getPropertyValue('--ru').trim()||'#C45A1A';
-    ctx.strokeStyle=clrBd;ctx.lineWidth=0.5;
-    for(let g=0;g<4;g++){const y=H-Math.round(H*g/4);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    weekVols.forEach((v,i)=>{const x=pad+(pad+bar)*i;const h=maxWV>0?Math.round((v/maxWV)*(H-6)):0;const y=H-h;ctx.fillStyle=i===weeks.length-1?clrRu:'#4A7098';ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,bar,h,2):ctx.rect(x,y,bar,h);ctx.fill();});
-    ctx.fillStyle=clrBd;ctx.font='9px monospace';ctx.textAlign='center';if(weeks[0])ctx.fillText('S'+weeks[0].slice(-2),pad+bar/2,H-2);if(weeks[weeks.length-1])ctx.fillText('S'+weeks[weeks.length-1].slice(-2),pad+(pad+bar)*(weeks.length-1)+bar/2,H-2);
-  }
-  // Load progression line chart
-  const lc=document.getElementById('evo-load-canvas');
-  if(lc&&selExId){
-    lc.width=lc.parentElement.clientWidth-16;
-    const ctx=lc.getContext('2d');const W=lc.width,H=lc.height||140;
-    ctx.clearRect(0,0,W,H);
-    const cs=getComputedStyle(document.documentElement);
-    const clrBd=cs.getPropertyValue('--bd').trim()||'#333';
     const clrOl=cs.getPropertyValue('--ol').trim()||'#6B9E52';
-    const clrRu=cs.getPropertyValue('--ru').trim()||'#C45A1A';
+    const clrTx=cs.getPropertyValue('--tx').trim()||'#E8EFF5';
     const clrTx2=cs.getPropertyValue('--tx2').trim()||'#7A8898';
-    // Gather data points: {date, maxKg}
-    const pts=[];
-    DB.keys('workout:').filter(k=>k.endsWith(':'+selDayId)).sort().forEach(k=>{
-      const log=DB.get(k)||{};if(!log[selExId]?.sets)return;
-      const maxKg=Math.max(0,...(log[selExId].sets||[]).filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));
-      if(maxKg>0)pts.push({date:k.split(':')[1],kg:maxKg});
-    });
-    if(!pts.length){ctx.fillStyle=clrTx2;ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('Sem dados para este exercício',W/2,H/2);return;}
-    const minKg=Math.max(0,Math.min(...pts.map(p=>p.kg))-5);
-    const maxKg=Math.max(...pts.map(p=>p.kg))+5;
-    const range=maxKg-minKg||1;
-    const pad=30,rpad=10,tpad=10,bpad=20;
-    const cW=W-pad-rpad,cH=H-tpad-bpad;
-    // Grid lines
-    ctx.strokeStyle=clrBd;ctx.lineWidth=0.5;
-    for(let g=0;g<=4;g++){const y=tpad+Math.round(cH*g/4);ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-rpad,y);ctx.stroke();ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='right';ctx.fillText(Math.round(maxKg-(range*g/4))+'kg',pad-2,y+3);}
-    // Line + area fill
-    if(pts.length>=2){
-      const px=i=>pad+Math.round(i/(pts.length-1)*cW);
-      const py=kg=>tpad+Math.round((1-(kg-minKg)/range)*cH);
-      ctx.beginPath();ctx.moveTo(px(0),H-bpad);pts.forEach((p,i)=>ctx.lineTo(px(i),py(p.kg)));ctx.lineTo(px(pts.length-1),H-bpad);ctx.closePath();ctx.fillStyle='rgba(196,90,26,.12)';ctx.fill();
-      ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(px(i),py(p.kg)):ctx.lineTo(px(i),py(p.kg)));ctx.strokeStyle=clrRu;ctx.lineWidth=2;ctx.stroke();
-      // Dots
-      pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(px(i),py(p.kg),3,0,Math.PI*2);ctx.fillStyle=i===pts.length-1?clrOl:clrRu;ctx.fill();});
-      // Last value label
-      const lp=pts[pts.length-1];ctx.fillStyle=clrOl;ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(lp.kg+'kg',px(pts.length-1),py(lp.kg)-7);
-      // Date labels
-      ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='center';
-      if(pts[0])ctx.fillText(pts[0].date.slice(5),px(0),H-4);
-      if(pts.length>1)ctx.fillText(pts[pts.length-1].date.slice(5),px(pts.length-1),H-4);
-    }else if(pts.length===1){
-      ctx.beginPath();ctx.arc(W/2,H/2,5,0,Math.PI*2);ctx.fillStyle=clrOl;ctx.fill();
-      ctx.fillStyle=clrTx2;ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(pts[0].kg+'kg em '+pts[0].date,W/2,H/2+18);
+
+    // ── Gráfico de volume semanal ─────────────────────────────────────────────
+    const vc=document.getElementById('evo-vol-canvas');
+    if(vc){
+      const pw=vc.parentElement?vc.parentElement.getBoundingClientRect().width:0;
+      if(pw<10){requestAnimationFrame(raf);return;}  // container ainda não renderizou
+      const dpr=window.devicePixelRatio||1;
+      const W=Math.floor(pw);const H=140;
+      vc.width=W*dpr;vc.height=H*dpr;
+      vc.style.width=W+'px';vc.style.height=H+'px';
+      const ctx=vc.getContext('2d');
+      ctx.scale(dpr,dpr);
+      ctx.clearRect(0,0,W,H);
+      if(!weeks||!weeks.length){
+        // Estado vazio
+        ctx.fillStyle=clrTx2;ctx.font='13px sans-serif';ctx.textAlign='center';
+        ctx.fillText('Nenhum treino registrado neste per\u00edodo.',W/2,H/2-8);
+        ctx.font='11px sans-serif';
+        ctx.fillText('Registre s\u00e9ries com peso para ver o gr\u00e1fico.',W/2,H/2+12);
+      } else {
+        const PAD_L=12,PAD_R=8,PAD_T=18,PAD_B=28;
+        const CW=W-PAD_L-PAD_R,CH=H-PAD_T-PAD_B;
+        const n=weeks.length;
+        const gap=Math.max(2,Math.floor(CW/n*0.18));
+        const barW=Math.max(4,Math.floor((CW-(n-1)*gap)/n));
+        const totalBarsW=n*barW+(n-1)*gap;
+        const startX=PAD_L+Math.floor((CW-totalBarsW)/2);
+
+        // grade horizontal
+        const GRIDS=4;
+        for(let g=0;g<=GRIDS;g++){
+          const y=PAD_T+Math.round(CH*g/GRIDS);
+          ctx.strokeStyle=clrBd;ctx.lineWidth=0.5;ctx.setLineDash([3,3]);
+          ctx.beginPath();ctx.moveTo(PAD_L,y);ctx.lineTo(W-PAD_R,y);ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // barras
+        const MAX=maxWV||1;
+        weekVols.forEach((v,i)=>{
+          const x=startX+i*(barW+gap);
+          const barH=CH>0?Math.max(v>0?2:0,Math.round((v/MAX)*CH)):0;
+          const y=PAD_T+CH-barH;
+          const isLast=(i===n-1);
+          // gradiente
+          const grad=ctx.createLinearGradient(x,y,x,PAD_T+CH);
+          grad.addColorStop(0,isLast?clrRu:'#4A7098');
+          grad.addColorStop(1,isLast?'rgba(196,90,26,.35)':'rgba(74,112,152,.35)');
+          ctx.fillStyle=grad;
+          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,barW,barH,isLast?[3,3,0,0]:[2,2,0,0]);ctx.fill();}
+          else{ctx.fillRect(x,y,barW,barH);}
+          // label de valor no topo (só se barra suficientemente alta e larga)
+          if(barH>16&&barW>20&&v>0){
+            const fmtVol=v>=1000?(Math.round(v/100)/10)+'t':Math.round(v)+'kg';
+            ctx.fillStyle=isLast?clrRu:clrTx;ctx.font=`bold ${Math.min(9,barW/3)}px monospace`;
+            ctx.textAlign='center';ctx.fillText(fmtVol,x+barW/2,y-3);
+          }
+        });
+
+        // labels de data no eixo X
+        ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='center';
+        const _fmtWk=wnum=>{
+          // wnum é um número de semana (timestamp/604800000); converte para "dd/mm"
+          const d=new Date(wnum*7*86400000);
+          return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+        };
+        if(n<=6){
+          weeks.forEach((w,i)=>{const x=startX+i*(barW+gap)+barW/2;ctx.fillText(_fmtWk(parseInt(w)),x,H-6);});
+        } else {
+          // primeira, meio e última
+          [[0,'start'],[Math.floor(n/2),'center'],[n-1,'end']].forEach(([i,align])=>{
+            const x=startX+i*(barW+gap)+barW/2;ctx.textAlign='center';ctx.fillText(_fmtWk(parseInt(weeks[i])),x,H-6);
+          });
+        }
+      }
     }
-  }
+
+    // ── Gráfico de progressão de carga ────────────────────────────────────────
+    const lc=document.getElementById('evo-load-canvas');
+    if(lc&&selExId){
+      const pw2=lc.parentElement?lc.parentElement.getBoundingClientRect().width:0;
+      if(pw2<10){requestAnimationFrame(raf);return;}
+      const dpr=window.devicePixelRatio||1;
+      const W=Math.floor(pw2);const H=150;
+      lc.width=W*dpr;lc.height=H*dpr;
+      lc.style.width=W+'px';lc.style.height=H+'px';
+      const ctx=lc.getContext('2d');
+      ctx.scale(dpr,dpr);
+      ctx.clearRect(0,0,W,H);
+      const pts=[];
+      DB.keys('workout:').filter(k=>k.endsWith(':'+selDayId)).sort().forEach(k=>{
+        const log=DB.get(k)||{};if(!log[selExId]?.sets)return;
+        const maxKg=Math.max(0,...(log[selExId].sets||[]).filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));
+        if(maxKg>0)pts.push({date:k.split(':')[1],kg:maxKg});
+      });
+      if(!pts.length){
+        ctx.fillStyle=clrTx2;ctx.font='12px sans-serif';ctx.textAlign='center';
+        ctx.fillText('Sem registros com peso para este exerc\u00edcio.',W/2,H/2);
+      } else if(pts.length===1){
+        ctx.beginPath();ctx.arc(W/2,H/2-10,6,0,Math.PI*2);ctx.fillStyle=clrOl;ctx.fill();
+        ctx.fillStyle=clrTx;ctx.font='bold 13px sans-serif';ctx.textAlign='center';
+        ctx.fillText(pts[0].kg+'kg',W/2,H/2+8);
+        ctx.fillStyle=clrTx2;ctx.font='10px sans-serif';ctx.fillText(pts[0].date,W/2,H/2+24);
+      } else {
+        const PAD_L=38,PAD_R=12,PAD_T=14,PAD_B=24;
+        const CW=W-PAD_L-PAD_R,CH=H-PAD_T-PAD_B;
+        const minKg=Math.max(0,Math.min(...pts.map(p=>p.kg))-5);
+        const maxKg=Math.max(...pts.map(p=>p.kg))+5;
+        const range=maxKg-minKg||1;
+        const px=i=>PAD_L+Math.round(i/(pts.length-1)*CW);
+        const py=kg=>PAD_T+Math.round((1-(kg-minKg)/range)*CH);
+        // grade + labels eixo Y
+        const GRIDS=4;ctx.setLineDash([3,3]);
+        for(let g=0;g<=GRIDS;g++){
+          const y=PAD_T+Math.round(CH*g/GRIDS);
+          ctx.strokeStyle=clrBd;ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(PAD_L,y);ctx.lineTo(W-PAD_R,y);ctx.stroke();
+          ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='right';
+          ctx.fillText(Math.round(maxKg-(range*g/GRIDS))+'kg',PAD_L-3,y+3);
+        }
+        ctx.setLineDash([]);
+        // área
+        ctx.beginPath();ctx.moveTo(px(0),PAD_T+CH);
+        pts.forEach((p,i)=>ctx.lineTo(px(i),py(p.kg)));
+        ctx.lineTo(px(pts.length-1),PAD_T+CH);ctx.closePath();
+        ctx.fillStyle='rgba(196,90,26,.12)';ctx.fill();
+        // linha
+        ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(px(i),py(p.kg)):ctx.lineTo(px(i),py(p.kg)));
+        ctx.strokeStyle=clrRu;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+        // pontos
+        pts.forEach((p,i)=>{
+          const isLast=i===pts.length-1;
+          ctx.beginPath();ctx.arc(px(i),py(p.kg),isLast?5:3,0,Math.PI*2);
+          ctx.fillStyle=isLast?clrOl:clrRu;ctx.fill();
+          if(isLast){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();}
+        });
+        // label último valor
+        const lp=pts[pts.length-1];
+        ctx.fillStyle=clrOl;ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+        ctx.fillText(lp.kg+'kg',px(pts.length-1),py(lp.kg)-9);
+        // labels datas eixo X
+        ctx.fillStyle=clrTx2;ctx.font='9px monospace';ctx.textAlign='center';
+        ctx.fillText(pts[0].date.slice(5),px(0),H-4);
+        if(pts.length>2)ctx.fillText(pts[Math.floor(pts.length/2)].date.slice(5),px(Math.floor(pts.length/2)),H-4);
+        ctx.fillText(pts[pts.length-1].date.slice(5),px(pts.length-1),H-4);
+      }
+    }
+  };
+  requestAnimationFrame(raf);
 }
+
 function renderContent(){switch(S.tab){case'painel':return renderPainel();case'treino':return renderTreino();case'musculos':return renderMusculos();case'dieta':return renderDieta();case'progresso':return renderProgresso();}}
 function mount(){document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();}
 function remountContent(){document.getElementById('content').innerHTML=renderContent();}
