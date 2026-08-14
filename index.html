@@ -2463,21 +2463,22 @@ const _app=initializeApp(_FCG);
 const _db=getFirestore(_app);
 const _auth=getAuth(_app);
 const _gprov=new GoogleAuthProvider();
-// Habilitar botao de login apos Firebase carregar
+// Habilitar botao de login
+let _btnEnabled=false;
 function _fbEnableBtn(){
+  if(_btnEnabled)return;_btnEnabled=true;
   const btn=document.getElementById('fb-google-btn');
   const lbl=document.getElementById('fb-btn-txt');
   if(btn){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}
   if(lbl)lbl.textContent='Entrar com Google';
 }
-// Usar localStorage (evita erro IndexedDB em alguns browsers/PWA)
-setPersistence(_auth,browserLocalStoragePersistence)
-  .then(()=>getRedirectResult(_auth))
-  .then(r=>{
-    if(r?.user)console.log('[Auth] redirect captado:',r.user.email);
-    _fbEnableBtn();
-  })
-  .catch(e=>{console.warn('[Auth] init err:',e.message);_fbEnableBtn();});
+// Fallback: habilitar apos 3s mesmo se Firebase travar
+setTimeout(_fbEnableBtn,3000);
+// Capturar resultado de redirect anterior (se houver)
+getRedirectResult(_auth)
+  .then(r=>{if(r?.user)console.log('[Auth] redirect captado:',r.user.email);})
+  .catch(e=>console.warn('[Auth] redirect err:',e.message))
+  .finally(()=>_fbEnableBtn());
 
 window._fbWrite=(k,vStr)=>{
   if(!window._fbUid)return;
@@ -2546,7 +2547,6 @@ document.getElementById('fb-google-btn')?.addEventListener('click',async()=>{
   if(lbl)lbl.textContent='Redirecionando...';
   errEl.textContent='';
   try{
-    await setPersistence(_auth,browserLocalStoragePersistence);
     await signInWithRedirect(_auth,_gprov);
   }catch(e){
     errEl.textContent=(e.code||'erro')+': '+e.message.slice(0,120);
