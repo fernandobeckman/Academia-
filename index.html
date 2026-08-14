@@ -267,6 +267,23 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 .evo-pr-ex{flex:1;font-size:.78rem;font-weight:600}
 .evo-pr-val{font-size:.8rem;font-weight:800;font-family:var(--mo);color:var(--ol)}
 .evo-pr-date{font-size:.65rem;color:var(--tx2)}
+.mv-wrap{position:relative;border-radius:12px;overflow:hidden;background:var(--sf);border:1px solid var(--bd);margin-bottom:12px;touch-action:none}
+.mv-canvas{width:100%;display:block;touch-action:none}
+.mv-views{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;white-space:nowrap}
+.mv-view-btn{background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:.68rem;cursor:pointer;backdrop-filter:blur(4px)}
+.mv-view-btn:active{background:rgba(196,90,26,.75)}
+.mv-loading-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sf);gap:8px;pointer-events:none}
+.mv-spinner{width:30px;height:30px;border:3px solid var(--bd);border-top-color:#C45A1A;border-radius:50%;animation:mv-spin 0.8s linear infinite}
+@keyframes mv-spin{to{transform:rotate(360deg)}}
+.mv-period-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.mv-period-row::-webkit-scrollbar{display:none}
+.mv-period-btn{background:var(--sf);border:1px solid var(--bd);color:var(--tx2);border-radius:20px;padding:5px 14px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.mv-period-btn.sel{background:#C45A1A;color:#fff;border-color:#C45A1A}
+.mv-info{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px}
+.mv-info-name{font-weight:800;font-size:.92rem;margin-bottom:2px}
+.mv-info-sub{font-size:.74rem;color:var(--tx2);margin-bottom:6px}
+.mv-legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:.68rem;color:var(--tx2);align-items:center}
+.mv-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .diet-goal-item{background:var(--sf);border-radius:10px;padding:11px}
 .diet-goal-lbl{font-size:.6rem;font-weight:800;color:var(--tx2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
 .diet-goal-inp{width:100%;padding:8px;border-radius:8px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);font-family:var(--mo);font-size:.98rem;font-weight:800;text-align:center}
@@ -450,6 +467,8 @@ const EX_MUS={
   f1:['back'],f2:['back'],f3:['back'],f4:['hamstrings','back'],f5:['forearm'],f6:['biceps'],f7:['back'],f8:['back'],f9:['core'],f10:['core'],
 };
 const MLBL={chest:'Peitoral',shoulders:'Ombros',back:'Costas',biceps:'Bíceps',triceps:'Tríceps',forearm:'Antebraço',trapezius:'Trapézio',quads:'Quadríceps',hamstrings:'Posterior',glutes:'Glúteos',calves:'Panturrilha',core:'Core'};
+const _MV_CDN='https://cdn.jsdelivr.net/npm/three@0.169.0/';
+const _MV_GLB='models/modelo-muscular-padrao.glb';
 const _GB='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 const EX_GIF={
   m1:'Barbell_Bench_Press_-_Medium_Grip',m2:'Incline_Dumbbell_Press',m3:'Cable_Crossover',
@@ -657,9 +676,14 @@ const P={
 };
 const ico=(k,sz=18,col='currentColor')=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${P[k]}"/></svg>`;
 const chkSvg=(sz=15)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="#0E1318" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="${P.check}"/></svg>`;
-const S={tab:'painel',wkBld:null,treinoView:'programs',treinoProgram:null,treinoDay:autoDay(),treinoStart:null,treinoStarted:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),muscWeek:mondayOf(new Date()),dietDay:todayISO(),dietOvMode:null,dietWizStep:1,dietWizData:null,dietFoodCat:'all',dietFoodQ:'',dietAddCtx:null,dietPlanId:null,dietMealId:null,dietQtyFood:null,histEx:null,wInput:'',detailEx:null,detailDay:null,editingGoals:false,evoPeriod:'30d',evoSelEx:null,_evoCanvasData:null};
+const S={tab:'painel',wkBld:null,treinoView:'programs',treinoProgram:null,treinoDay:autoDay(),treinoStart:null,treinoStarted:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),muscWeek:mondayOf(new Date()),muscPeriod:'week',muscSel:null,dietDay:todayISO(),dietOvMode:null,dietWizStep:1,dietWizData:null,dietFoodCat:'all',dietFoodQ:'',dietAddCtx:null,dietPlanId:null,dietMealId:null,dietQtyFood:null,histEx:null,wInput:'',detailEx:null,detailDay:null,editingGoals:false,evoPeriod:'30d',evoSelEx:null,_evoCanvasData:null};
 const TIMERS={};let _pTimer=null;
 let detailTimer={rem:null,iid:null};
+let _mvTHREE=null,_mvGLTFL=null,_mvORBIT=null;
+let _mvGltfCache=null;
+let _mvRenderer=null,_mvScene=null,_mvCam=null,_mvCtrls=null;
+let _mvMeshes={};
+let _mvRaf=null,_mvMountId=0;
 // ── Som de alerta ──────────────────────────────────────────────
 function beepSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);o.start();o.stop(ctx.currentTime+1);}catch(e){}}
 // ── Recordes Pessoais ──────────────────────────────────────────
@@ -1127,14 +1151,161 @@ function renderTreino(){
     :`<button class="btn-iniciar" data-comecar-treino>${ico('play',18,'#fff')} Começar Treino</button>`;
   return backBtn+`<div class="dscroll">${pills}</div><div class="wk-hdr"><div class="wk-hdr-left"><div class="h2">${day.full}</div><div class="sub">${day.focus}</div></div>${_wkTimer?`<div class="wk-timer-badge" id="wk-elapsed">${_wkTimer}</div>`:''}</div><div class="wk-prog-row"><div class="wk-prog-bar"><div class="wk-prog-fill" id="pfill" style="width:${_wkPct}%"></div></div><span class="wk-prog-pct" id="pct-lbl">${_wkTotDone}/${_wkTotPlan} séries · ${_wkPct}%</span></div>${emptyState}${cards}${actionBtn}`;
 }
+// ── Viewer 3D Músculos ──────────────────────────────────────────────────────
+function _mvIdToGrp(id){
+  if(!id)return'';
+  if(id.includes('pectoralis'))return'chest';
+  if(id.includes('latissimus')||id.includes('rhomboid')||id.includes('teres_major')||id.includes('erector'))return'back';
+  if(id.includes('trapezius'))return'trapezius';
+  if(id.includes('deltoid'))return'shoulders';
+  if(id.includes('biceps_brachii')||id.includes('brachialis'))return'biceps';
+  if(id.includes('triceps'))return'triceps';
+  if(id.includes('forearm'))return'forearm';
+  if(id.includes('rectus_abdominis')||id.includes('oblique')||id.includes('serratus'))return'core';
+  if(id.includes('gluteus'))return'glutes';
+  if(id.includes('vastus')||id.includes('rectus_femoris'))return'quads';
+  if(id.includes('adductor'))return'adductors';
+  if(id.includes('biceps_femoris')||id.includes('medial_hamstring'))return'hamstrings';
+  if(id.includes('gastrocnemius')||id.includes('soleus')||id.includes('tibialis'))return'calves';
+  return'';
+}
+function _mvGetCounts(){
+  const per=S.muscPeriod||'week';
+  const now=new Date();let cut;
+  if(per==='week')cut=mondayOf(now).toISOString().slice(0,10);
+  else if(per==='month'){const d=new Date(now);d.setDate(d.getDate()-30);cut=d.toISOString().slice(0,10);}
+  else if(per==='3mo'){const d=new Date(now);d.setDate(d.getDate()-90);cut=d.toISOString().slice(0,10);}
+  else cut='2000-01-01';
+  const gc={};
+  DB.keys('workout:').filter(k=>k.slice(8,18)>=cut).forEach(k=>{
+    const log=DB.get(k)||{};
+    Object.keys(log).forEach(exId=>{
+      const s=(log[exId]?.sets||[]).filter(s=>s.done).length;
+      if(!s)return;
+      (EX_MUS[exId]||[]).forEach(g=>{gc[g]=(gc[g]||0)+s;});
+    });
+  });
+  return gc;
+}
+function _mvStop(){if(_mvRaf){cancelAnimationFrame(_mvRaf);_mvRaf=null;}}
+function _mvColorize(gc){
+  const max=Math.max(1,...Object.values(gc));
+  Object.entries(_mvMeshes).forEach(([mid,{mesh,or,og,ob,oa}])=>{
+    const mat=Array.isArray(mesh.material)?mesh.material[0]:mesh.material;if(!mat)return;
+    const grp=_mvIdToGrp(mid);const c=gc[grp]||0;
+    if(c===0){mat.color.setRGB(or,og,ob);mat.emissive.setRGB(0,0,0);}
+    else{const t=c/max;mat.color.setHex(t<0.33?0x2688FA:t<0.66?0xFF9A00:0xE83828);mat.emissive.setRGB(0.06,0.02,0);}
+    mat.opacity=oa;mat.needsUpdate=true;
+  });
+}
+function _mvDesel(){_mvColorize(_mvGetCounts());}
+function _mvSelect(mid,ud){
+  S.muscSel=mid;
+  const gc=_mvGetCounts();const max=Math.max(1,...Object.values(gc));
+  Object.entries(_mvMeshes).forEach(([id,{mesh,or,og,ob,oa}])=>{
+    const mat=Array.isArray(mesh.material)?mesh.material[0]:mesh.material;if(!mat)return;
+    if(id===mid){mat.emissive.setRGB(0.45,0.2,0);mat.opacity=1;}
+    else{const grp=_mvIdToGrp(id);const c=gc[grp]||0;
+      if(c===0){mat.color.setRGB(or,og,ob);}
+      else{const t=c/max;mat.color.setHex(t<0.33?0x2688FA:t<0.66?0xFF9A00:0xE83828);}
+      mat.opacity=0.22;mat.emissive.setRGB(0,0,0);}
+    mat.needsUpdate=true;
+  });
+  const info=document.getElementById('mv-info');if(!info)return;
+  const grp=_mvIdToGrp(mid);const gc2=_mvGetCounts();const cnt=gc2[grp]||0;
+  const label=ud?.label||mid;
+  const side=ud?.side&&ud.side!=='center'?(ud.side==='left'?' · Esq':' · Dir'):'';
+  info.style.display='block';
+  info.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="mv-info-name">${label}</div><div class="mv-info-sub">${MLBL[grp]||grp}${side}</div></div><button onclick="S.muscSel=null;_mvDesel();document.getElementById('mv-info').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--tx2);flex-shrink:0">✕</button></div>${cnt>0?`<div style="font-size:.78rem;color:#C45A1A;margin-top:4px"><b>${cnt}</b> séries neste período</div>`:'<div style="font-size:.78rem;color:var(--tx2);margin-top:4px">Sem registro neste período</div>'}`;
+}
+function _mvSetView(p){
+  if(!_mvCam||!_mvCtrls)return;
+  const d=2.8;
+  if(p==='front')_mvCam.position.set(0,0,d);
+  else if(p==='back')_mvCam.position.set(0,0,-d);
+  else if(p==='left')_mvCam.position.set(-d,0,0);
+  else if(p==='right')_mvCam.position.set(d,0,0);
+  else _mvCam.position.set(0,0,d);
+  _mvCam.lookAt(0,0,0);_mvCtrls.target.set(0,0,0);_mvCtrls.update();
+}
+async function _mvInit(){
+  const canvas=document.getElementById('mv-canvas');if(!canvas)return;
+  _mvStop();
+  const ov=document.getElementById('mv-loading');if(ov)ov.style.display='flex';
+  const mid=++_mvMountId;
+  try{
+    if(!_mvTHREE){
+      const CDN=_MV_CDN;
+      const[T,G,O]=await Promise.all([import(CDN+'build/three.module.js'),import(CDN+'examples/jsm/loaders/GLTFLoader.js'),import(CDN+'examples/jsm/controls/OrbitControls.js')]);
+      _mvTHREE=T;_mvGLTFL=G.GLTFLoader;_mvORBIT=O.OrbitControls;
+    }
+    if(mid!==_mvMountId)return;
+    const THREE=_mvTHREE;
+    const w=canvas.offsetWidth||320;const h=canvas.offsetHeight||430;
+    if(_mvRenderer){try{_mvRenderer.dispose();}catch(e){}}
+    _mvRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    _mvRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    _mvRenderer.setSize(w,h,false);
+    _mvRenderer.setClearColor(0x000000,0);
+    _mvScene=new THREE.Scene();
+    _mvCam=new THREE.PerspectiveCamera(42,w/h,0.01,50);
+    _mvCam.position.set(0,0,2.8);
+    _mvScene.add(new THREE.AmbientLight(0xffffff,2.0));
+    const dL=new THREE.DirectionalLight(0xffffff,2.5);dL.position.set(1,2,3);_mvScene.add(dL);
+    const bL=new THREE.DirectionalLight(0x8090ff,0.8);bL.position.set(-1,-1,-2);_mvScene.add(bL);
+    _mvCtrls=new _mvORBIT(_mvCam,canvas);
+    _mvCtrls.enableDamping=true;_mvCtrls.dampingFactor=0.08;
+    _mvCtrls.minDistance=1.0;_mvCtrls.maxDistance=6;
+    _mvCtrls.enablePan=false;_mvCtrls.target.set(0,0,0);
+    if(!_mvGltfCache){
+      await new Promise((res,rej)=>new _mvGLTFL().load(_MV_GLB,g=>{_mvGltfCache=g;res();},null,e=>rej(e)));
+    }
+    if(mid!==_mvMountId)return;
+    const model=_mvGltfCache.scene.clone(true);_mvScene.add(model);_mvMeshes={};
+    model.traverse(obj=>{
+      if(!obj.isMesh)return;
+      const ud=obj.userData?.muscleId?obj.userData:(obj.parent?.userData?.muscleId?obj.parent.userData:null);
+      if(!ud?.muscleId||ud.interactive===false)return;
+      if(Array.isArray(obj.material))obj.material=obj.material.map(m=>m.clone());
+      else obj.material=obj.material.clone();
+      const mat=Array.isArray(obj.material)?obj.material[0]:obj.material;
+      if(mat){mat.transparent=true;}
+      _mvMeshes[ud.muscleId]={mesh:obj,ud,or:mat?.color?.r??0.8,og:mat?.color?.g??0.6,ob:mat?.color?.b??0.6,oa:mat?.opacity??1};
+    });
+    const gc=_mvGetCounts();_mvColorize(gc);
+    if(S.muscSel&&_mvMeshes[S.muscSel])_mvSelect(S.muscSel,_mvMeshes[S.muscSel].ud);
+    if(ov)ov.style.display='none';
+    const ray=new THREE.Raycaster();const ptr=new THREE.Vector2();
+    function onPick(cx,cy){
+      const r=canvas.getBoundingClientRect();
+      ptr.x=((cx-r.left)/r.width)*2-1;ptr.y=-((cy-r.top)/r.height)*2+1;
+      ray.setFromCamera(ptr,_mvCam);
+      const hits=ray.intersectObjects(Object.values(_mvMeshes).map(m=>m.mesh),false);
+      if(hits.length){
+        const obj=hits[0].object;
+        const ud=obj.userData?.muscleId?obj.userData:(obj.parent?.userData||{});
+        if(ud.muscleId&&ud.interactive!==false){_mvSelect(ud.muscleId,ud);return;}
+      }
+      S.muscSel=null;_mvDesel();const inf=document.getElementById('mv-info');if(inf)inf.style.display='none';
+    }
+    canvas.addEventListener('click',e=>onPick(e.clientX,e.clientY));
+    canvas.addEventListener('touchend',e=>{if(e.changedTouches[0]){const t=e.changedTouches[0];onPick(t.clientX,t.clientY);}},{passive:true});
+    const loop=()=>{if(mid!==_mvMountId)return;_mvRaf=requestAnimationFrame(loop);_mvCtrls.update();_mvRenderer.render(_mvScene,_mvCam);};loop();
+  }catch(err){
+    console.error('MuscleViewer:',err);
+    if(ov)ov.innerHTML='<div style="color:var(--tx2);font-size:.82rem;text-align:center;padding:24px">Erro ao carregar modelo 3D.<br><button onclick="_mvInit()" style="margin-top:10px;padding:8px 20px;background:#C45A1A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.84rem">Tentar novamente</button></div>';
+  }
+}
 function renderMusculos(){
-  const ws=S.muscWeek;const counts={};
-  for(let i=0;i<5;i++){const d=new Date(ws);d.setDate(d.getDate()+i);const dd=DAY_BY_WD[d.getDay()];if(!dd)continue;const iso=isoOf(d.getFullYear(),d.getMonth(),d.getDate());const log=DB.get(`workout:${iso}:${dd.id}`)||{};Object.keys(log).forEach(id=>{const _e=log[id];const _dc=(_e?.sets||[]).filter(s=>s.done).length;if(_dc<=0&&!_e?.done)return;const _cnt=_dc>0?_dc:1;(EX_MUS[id]||[]).forEach(g=>{counts[g]=(counts[g]||0)+_cnt;});});}
-  const max=Math.max(1,...Object.values(counts));const we=new Date(ws);we.setDate(we.getDate()+4);
-  const fmt=d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const barList=sorted.map(([g,c])=>{const t=c/max;const col=t>0.75?'#E83828':t>0.5?'#CC3022':t>0.25?'#A86060':'#886060';return`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="min-width:88px;font-size:.78rem;color:var(--tx2)">${MLBL[g]}</span><div style="flex:1;background:var(--bd);border-radius:2px;height:5px"><div style="width:${Math.round(t*100)}%;height:100%;background:${col};border-radius:2px"></div></div><span style="font-family:var(--mo);font-size:.72rem;color:${col};min-width:22px;text-align:right">${c}×</span></div>`;}).join('');
-  return`<div class="nav-row"><div><div class="h2">Músculos</div><div class="sub">${fmt(ws)} – ${fmt(we)}</div></div><div class="nav-btn"><button data-musc-prev>${ico('chevL',20,'#C45A1A')}</button><button data-musc-next>${ico('chevR',20,'#C45A1A')}</button></div></div>${buildBodySVG(counts,max,null)}${sorted.length?`<div style="margin-top:4px">${barList}</div>`:`<p style="color:var(--tx2);font-size:.84rem;text-align:center;padding:20px 0">Nenhum exercício marcado nessa semana.</p>`}`;
+  const per=S.muscPeriod||'week';
+  const perOpts=[{id:'week',lb:'Semana'},{id:'month',lb:'Mês'},{id:'3mo',lb:'3 Meses'},{id:'all',lb:'Sempre'}];
+  const perBar=perOpts.map(p=>`<button class="mv-period-btn${per===p.id?' sel':''}" data-mv-period="${p.id}">${p.lb}</button>`).join('');
+  const gc=_mvGetCounts();const gmax=Math.max(1,...Object.values(gc));
+  const sorted=Object.entries(gc).sort((a,b)=>b[1]-a[1]);
+  const barList=sorted.map(([g,c])=>{const t=c/gmax;const col=t>0.66?'#E83828':t>0.33?'#C45A1A':'#2688FA';return`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="min-width:88px;font-size:.78rem;color:var(--tx2)">${MLBL[g]||g}</span><div style="flex:1;background:var(--bd);border-radius:2px;height:5px"><div style="width:${Math.round(t*100)}%;height:100%;background:${col};border-radius:2px"></div></div><span style="font-family:var(--mo);font-size:.72rem;color:${col};min-width:22px;text-align:right">${c}×</span></div>`;}).join('');
+  const legend=`<div class="mv-legend"><div class="mv-legend-dot" style="background:var(--bd);border:1px solid var(--tx2)"></div>Sem registro&ensp;<div class="mv-legend-dot" style="background:#2688FA"></div>Baixo&ensp;<div class="mv-legend-dot" style="background:#FF9A00"></div>Moderado&ensp;<div class="mv-legend-dot" style="background:#E83828"></div>Alto</div>`;
+  const viewBtns=`<div class="mv-views"><button class="mv-view-btn" data-mv-view="front">Frente</button><button class="mv-view-btn" data-mv-view="back">Costas</button><button class="mv-view-btn" data-mv-view="left">Esq</button><button class="mv-view-btn" data-mv-view="right">Dir</button><button class="mv-view-btn" data-mv-view="reset">↺</button></div>`;
+  return`<div class="h2" style="margin-bottom:10px">Músculos</div><div class="mv-period-row">${perBar}</div>${legend}<div class="mv-wrap"><canvas id="mv-canvas" class="mv-canvas" style="height:430px"></canvas>${viewBtns}<div id="mv-loading" class="mv-loading-overlay"><div class="mv-spinner"></div><div style="font-size:.8rem;color:var(--tx2);margin-top:6px">Carregando modelo 3D…</div></div></div><div id="mv-info" class="mv-info" style="display:none"></div>${sorted.length?`<div style="margin-top:6px">${barList}</div>`:'<p style="color:var(--tx2);font-size:.84rem;text-align:center;padding:16px 0">Nenhum exercício registrado neste período.</p>'}`;
 }
 // ── Sistema de Dieta ─────────────────────────────────────────────────────────
 function _dUid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -1966,8 +2137,8 @@ function _drawEvoCharts(){
 }
 
 function renderContent(){switch(S.tab){case'painel':return renderPainel();case'treino':return renderTreino();case'musculos':return renderMusculos();case'dieta':return renderDieta();case'progresso':return renderProgresso();}}
-function mount(){document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();}
-function remountContent(){document.getElementById('content').innerHTML=renderContent();}
+function mount(){document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function remountContent(){document.getElementById('content').innerHTML=renderContent();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 // Cache de instruções dos exercícios (free-exercise-db)
 const _EXDB_URL='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const _EXDB_KEY='exdb_v1';
@@ -2092,6 +2263,8 @@ document.addEventListener('click',e=>{
   const cd=t.closest('[data-cal-day]');if(cd&&cd.dataset.calDay){const _cIso=cd.dataset.calDate,_cDay=cd.dataset.calDay;if(_cIso&&_cIso!==todayISO()&&DB.get('workout:'+_cIso+':'+_cDay)){openDayLog(_cIso,_cDay);return;}S.tab='treino';S.treinoView='exercises';S.treinoProgram=S.treinoProgram||PROGRAMS[0]?.id||null;S.treinoDay=_cDay;S.histEx=null;mount();return;}
   if(t.closest('[data-musc-prev]')){const d=new Date(S.muscWeek);d.setDate(d.getDate()-7);S.muscWeek=d;remountContent();return;}
   if(t.closest('[data-musc-next]')){const d=new Date(S.muscWeek);d.setDate(d.getDate()+7);S.muscWeek=d;remountContent();return;}
+  const _mvPB=t.closest('[data-mv-period]');if(_mvPB){S.muscPeriod=_mvPB.dataset.mvPeriod;S.muscSel=null;remountContent();return;}
+  const _mvVB=t.closest('[data-mv-view]');if(_mvVB){_mvSetView(_mvVB.dataset.mvView);return;}
   // Diet main tab
   const _dd=t.closest('[data-diet-day]');if(_dd){S.dietDay=_dd.dataset.dietDay;remountContent();return;}
   if(t.closest('[data-diet-new]')){S.dietWizData={name:'',objective:'',days:{mon:true,tue:true,wed:true,thu:true,fri:true},meals:['cafe','almoco','jantar'],goals:{}};S.dietWizStep=1;openDietOv('wizard');return;}
