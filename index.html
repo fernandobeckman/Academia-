@@ -2526,12 +2526,6 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
       var _db=firebase.firestore();
       var _gprov=new firebase.auth.GoogleAuthProvider();
 
-      // Usar sessionStorage em vez de IndexedDB (evita erro "Database is closing" no Edge/PWA)
-      _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
-
-      // Habilitar botao imediatamente (popup nao precisa esperar getRedirectResult)
-      window._fbEnableBtnOnce();
-
       window._fbWrite=function(k,vStr){
         if(!window._fbUid)return;
         _db.collection('users').doc(window._fbUid).collection('data').doc(_encK(k))
@@ -2550,16 +2544,34 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync erro:',e.message);});
       });
 
+      // Configurar SESSION persistence (sessionStorage, evita IndexedDB)
+      // e capturar redirect anterior se houver — encadeado para garantir ordem
+      _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+        .catch(function(){})
+        .then(function(){return _auth.getRedirectResult();})
+        .then(function(r){if(r&&r.user)console.log('[Auth] redirect captado:',r.user.email);})
+        .catch(function(e){console.warn('[Auth] redirect err:',e.message);})
+        .finally(function(){window._fbEnableBtnOnce();});
+
       var btn=document.getElementById('fb-google-btn');
       if(btn)btn.addEventListener('click',function(){
         var errEl=document.getElementById('fb-login-err');
         var lbl=document.getElementById('fb-btn-txt');
         if(lbl)lbl.textContent='Abrindo login...';
         if(errEl)errEl.textContent='';
-        // Popup: nao recarrega pagina, resultado retorna direto sem IndexedDB
+        // Tentar popup; se bloqueado, usar redirect (SESSION ja configurado acima)
         _auth.signInWithPopup(_gprov).catch(function(e){
-          if(errEl)errEl.textContent=(e.code||'erro')+': '+e.message.slice(0,120);
-          if(lbl)lbl.textContent='Entrar com Google';
+          var bloqueado=e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request';
+          if(bloqueado){
+            if(lbl)lbl.textContent='Redirecionando...';
+            _auth.signInWithRedirect(_gprov).catch(function(e2){
+              if(errEl)errEl.textContent=(e2.code||'erro')+': '+e2.message.slice(0,120);
+              if(lbl)lbl.textContent='Entrar com Google';
+            });
+          }else{
+            if(errEl)errEl.textContent=(e.code||'erro')+': '+e.message.slice(0,120);
+            if(lbl)lbl.textContent='Entrar com Google';
+          }
         });
       });
 
