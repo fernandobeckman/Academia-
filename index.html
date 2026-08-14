@@ -2429,7 +2429,7 @@ function renderPhotos(){const photos=DB.get('progress-photos')||[];const thumbs=
 document.getElementById('photo-input').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;compressPhoto(file,src=>{const photos=[...(DB.get('progress-photos')||[])];if(photos.length>=20){alert('Limite de 20 fotos atingido. Remova uma foto antes de adicionar.');return;}photos.unshift({date:todayISO(),src});DB.set('progress-photos',photos);remountContent();});e.target.value='';});
 
 // ── mount com animação ─────────────────────────────────────────────
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js').catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{if(!localStorage.getItem('_fb_redir')){navigator.serviceWorker.register('./service-worker.js').catch(()=>{});}});}
 (function(){const aw=DB.get('active-workout');if(aw&&aw.startTs&&aw.dayId){S.treinoStarted=true;S.treinoStart=aw.startTs;S.treinoDay=aw.dayId;if(aw.program)S.treinoProgram=aw.program;}})();
 initOnboarding();
 mount();
@@ -2526,6 +2526,8 @@ onAuthStateChanged(_auth,async user=>{
   window._fbUid=user.uid;
   window._fbEmail=user.email;
   window._fbIsAdmin=_ADMIN.includes(email);
+  localStorage.removeItem('_fb_redir');
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
   _fbHideLogin();
   _fbSetChip(user.email);
   try{await _fbSync(user.uid);}catch(e){console.warn('[Firebase] sync erro:',e.message);}
@@ -2534,6 +2536,11 @@ onAuthStateChanged(_auth,async user=>{
 document.getElementById('fb-google-btn')?.addEventListener('click',async()=>{
   document.getElementById('fb-login-err').textContent='';
   try{
+    localStorage.setItem('_fb_redir','1');
+    if('serviceWorker' in navigator){
+      const rs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(rs.map(r=>r.unregister()));
+    }
     await setPersistence(_auth,browserLocalStoragePersistence);
     await signInWithRedirect(_auth,_gprov);
   }catch(e){_fbShowLogin('Erro ao entrar: '+e.message);}
