@@ -1,7 +1,7 @@
 {
-  "id": "br.com.bulklog.app",
-  "name": "Bulk Log — Treino & Dieta",
-  "short_name": "Bulk Log",
+  "id": "br.com.legende.app",
+  "name": "Legende",
+  "short_name": "Legende",
   "description": "Acompanhamento de treino e dieta para ganho de massa muscular",
   "lang": "pt-BR",
   "start_url": "./index.html",
