@@ -850,9 +850,9 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
   <div class="onb-body">
 
-    <img class="onb-icon" src="./icon-192.png" alt="Bulk Log">
+    <img class="onb-icon" src="./icon-192.png" alt="Legende">
 
-    <div class="onb-title">Bulk Log</div>
+    <div class="onb-title">Legende</div>
 
     <div class="onb-sub">Registre treinos, dieta e progresso.<br>Simples, rápido, offline.</div>
 
@@ -4508,7 +4508,7 @@ document.addEventListener('click',e=>{
 
   if(t.closest('[data-back-splits]')){S.treinoView='splits';remountContent();return;}
 
-  const nb=t.closest('[data-tab]');if(nb){S.tab=nb.dataset.tab;S.histEx=null;if(nb.dataset.tab==='treino'&&!S.treinoProgram)S.treinoView='programs';mount();return;}
+  const nb=t.closest('[data-tab]');if(nb){S.tab=nb.dataset.tab;S.histEx=null;if(nb.dataset.tab==='treino'&&!S.treinoProgram)S.treinoView='programs';closeWkBld();mount();return;}
 
   // data-toggle removed: completion is series-based
 
