@@ -168,6 +168,97 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
 .wk-bld-wiz-step.cur{background:var(--ru)}
 
+/* ── Configurações overlay ── */
+#cfg-ov{position:fixed;inset:0;background:var(--bg);z-index:261;display:none;flex-direction:column;max-width:430px;left:50%;transform:translateX(-50%)}
+#cfg-ov.open{display:flex}
+.cfg-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.cfg-hd-back{color:var(--ru);font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:4px}
+.cfg-hd-title{font-size:.92rem;font-weight:800;flex:1;text-align:center}
+.cfg-body{flex:1;overflow-y:auto;padding:14px 16px 60px}
+.cfg-sec{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:0 14px;margin-bottom:12px}
+.cfg-sec-lbl{font-size:.6rem;font-weight:800;color:var(--ru);letter-spacing:.1em;text-transform:uppercase;padding:12px 0 6px}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--bd)}
+.cfg-row:last-child{border-bottom:none}
+.cfg-row-lbl{font-size:.85rem;font-weight:600}
+.cfg-row-sub{font-size:.7rem;color:var(--tx2);margin-top:2px}
+.cfg-avatar{width:52px;height:52px;border-radius:50%;background:var(--ru);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;flex-shrink:0;overflow:hidden;margin-bottom:10px}
+.cfg-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.cfg-field-lbl{font-size:.65rem;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px}
+.cfg-field-lbl:first-child{margin-top:12px}
+.cfg-inp{width:100%;padding:9px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);font-size:.88rem;font-family:inherit}
+.cfg-inp:focus{border-color:var(--ru);outline:none}
+.cfg-inp[readonly]{opacity:.55;cursor:default}
+.cfg-inp.cfg-sel{-webkit-appearance:none;appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A8898'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.cfg-save-btn{width:100%;padding:12px;border-radius:10px;background:var(--ru);color:#fff;font-size:.9rem;font-weight:800;margin:12px 0 6px;letter-spacing:.02em}
+.cfg-tog{width:42px;height:24px;border-radius:12px;background:var(--bd);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.cfg-tog.on{background:var(--ol)}
+.cfg-tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.cfg-tog.on::after{left:21px}
+.cfg-logout-btn{width:100%;padding:12px;border-radius:10px;background:transparent;border:1.5px solid #E83828;color:#E83828;font-size:.9rem;font-weight:800;letter-spacing:.02em;margin-bottom:2px}
+.cfg-unit-btn{padding:6px 14px;border-radius:7px;font-size:.78rem;font-weight:700;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2)}
+.cfg-unit-btn.on{background:var(--ru);border-color:var(--ru);color:#fff}
+.painel-top{display:flex;align-items:center;justify-content:space-between;padding:16px 0 10px}
+.painel-top-title{font-size:1.1rem;font-weight:900;letter-spacing:-.01em}
+.painel-gear{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);color:var(--tx2);transition:border-color .15s}
+.painel-gear:active{border-color:var(--ru);color:var(--ru)}
+
+/* ── Status overlay (pending / rejected / suspended) ── */
+#status-ov{position:fixed;inset:0;z-index:99998;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px}
+#status-ov.show{display:flex}
+.st-box{background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:32px 24px;max-width:340px;width:100%;text-align:center}
+.st-icon{font-size:3.2rem;margin-bottom:16px;line-height:1;display:block}
+.st-title{font-size:1.25rem;font-weight:900;margin-bottom:10px}
+.st-msg{font-size:.83rem;color:var(--tx2);line-height:1.65;margin-bottom:6px}
+.st-email{font-size:.72rem;color:var(--ru);font-weight:700;margin-bottom:22px;word-break:break-all}
+.st-logout{padding:11px 28px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);font-size:.85rem;font-weight:700}
+
+/* ── Painel Admin ── */
+#admin-ov{position:fixed;inset:0;background:var(--bg);z-index:262;display:none;flex-direction:column;max-width:430px;left:50%;transform:translateX(-50%)}
+#admin-ov.open{display:flex}
+.adm-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.adm-hd-back{color:var(--ru);font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:4px}
+.adm-hd-title{font-size:.92rem;font-weight:800;flex:1;text-align:center}
+.adm-tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.adm-tabs::-webkit-scrollbar{display:none}
+.adm-tab{flex-shrink:0;padding:10px 12px;font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx2);border-bottom:2px solid transparent;white-space:nowrap}
+.adm-tab.on{color:var(--ru);border-bottom-color:var(--ru)}
+.adm-body{flex:1;overflow-y:auto;padding:14px 16px 40px}
+.adm-sec-lbl{font-size:.6rem;font-weight:800;color:var(--ru);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.adm-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.adm-stat{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center}
+.adm-stat-n{font-size:1.6rem;font-weight:900;font-family:var(--mo);line-height:1}
+.adm-stat-l{font-size:.58rem;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.adm-user-row{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.adm-user-row:active{border-color:var(--ru)}
+.adm-user-top{display:flex;align-items:center;gap:10px}
+.adm-avatar{width:36px;height:36px;border-radius:50%;background:var(--ru);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;flex-shrink:0;overflow:hidden}
+.adm-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.adm-u-name{font-size:.85rem;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-u-email{font-size:.68rem;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:.6rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;flex-shrink:0;margin-left:auto}
+.adm-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)}
+.adm-detail{background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:.76rem}
+.adm-detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd)}
+.adm-detail-row:last-child{border-bottom:none}
+.adm-dk{color:var(--tx2);font-weight:600}
+.adm-dv{font-weight:700;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-btn{padding:7px 13px;border-radius:8px;font-size:.73rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.adm-btn-approve{background:var(--ol);color:#fff}
+.adm-btn-assign{background:var(--ru);color:#fff}
+.adm-btn-reject{background:var(--sf2);border:1px solid var(--bd);color:#E83828}
+.adm-btn-suspend{background:var(--sf2);border:1px solid var(--bd);color:#FFB038}
+.adm-btn-reactivate{background:var(--ol);color:#fff}
+.adm-btn-ghost{background:var(--sf2);border:1px solid var(--bd);color:var(--tx2)}
+.adm-search{width:100%;padding:9px 12px;border-radius:8px;background:var(--sf);border:1px solid var(--bd);color:var(--tx);font-size:.85rem;font-family:inherit;margin-bottom:10px}
+.adm-search:focus{border-color:var(--ru);outline:none}
+.adm-filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.adm-filter{padding:4px 10px;border-radius:6px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2)}
+.adm-filter.on{background:var(--ru);border-color:var(--ru);color:#fff}
+.adm-empty{text-align:center;padding:40px 16px;color:var(--tx2);font-size:.85rem}
+.adm-prog-row{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.adm-prog-row:active{border-color:var(--ru)}
+.adm-alert{background:#2A2000;border:1px solid #FFB038;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:.8rem}
+
 .wk-bld-inp{width:100%;padding:11px 13px;border-radius:10px;background:var(--sf);border:1px solid var(--bd);color:var(--tx);font-size:.9rem;margin-bottom:10px;display:block;box-sizing:border-box}
 
 .wk-bld-inp:focus{border-color:var(--ru);outline:none}
@@ -702,7 +793,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
 /* ── Botão tema ── */
 
-#fb-login{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;}#fb-login-box{background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:36px 32px;max-width:320px;width:90%;text-align:center;}#fb-login-title{font-size:1.8rem;font-weight:900;color:var(--tx);margin-bottom:4px}#fb-login-sub{font-size:.85rem;color:var(--tx2);margin-bottom:28px}#fb-google-btn{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--bd);background:#fff;color:#3c4043;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}#fb-google-btn:hover{background:#f5f5f5}#fb-login-err{color:#E83828;font-size:.8rem;margin-top:14px;min-height:18px}#fb-user-chip{position:fixed;top:14px;left:12px;z-index:300;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--tx2);display:none;align-items:center;gap:6px;cursor:pointer}#fb-user-chip:hover{background:var(--bd)}@media(min-width:454px){#fb-user-chip{left:calc(50vw - 203px)}}#theme-btn{position:fixed;top:14px;right:12px;z-index:300;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:5px}
+#fb-login{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;}#fb-login-box{background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:36px 32px;max-width:320px;width:90%;text-align:center;}#fb-login-title{font-size:1.8rem;font-weight:900;color:var(--tx);margin-bottom:4px}#fb-login-sub{font-size:.85rem;color:var(--tx2);margin-bottom:28px}#fb-google-btn{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--bd);background:#fff;color:#3c4043;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}#fb-google-btn:hover{background:#f5f5f5}#fb-login-err{color:#E83828;font-size:.8rem;margin-top:14px;min-height:18px}#fb-user-chip{display:none!important}#fb-user-chip:hover{background:var(--bd)}@media(min-width:454px){#fb-user-chip{left:calc(50vw - 203px)}}#theme-btn{display:none!important}
 
 @media(min-width:454px){#theme-btn{right:calc(50vw - 203px)}}
 
@@ -874,11 +965,52 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
 
 
-<!-- Tema -->
+<!-- Tema (botão mantido para listeners legados, invisível via CSS) -->
+<button id="theme-btn" title="Alternar tema" aria-hidden="true"></button>
+<button id="fb-user-chip" title="Sair" aria-hidden="true"><span id="fb-chip-ini"></span><span id="fb-chip-label"></span></button>
 
-<button id="theme-btn" title="Alternar tema"></button>
+<!-- ── Painel Admin overlay ── -->
+<div id="admin-ov">
+  <div class="adm-head">
+    <button data-admin-close class="adm-hd-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Voltar
+    </button>
+    <div class="adm-hd-title">Painel Admin</div>
+    <div style="width:56px"></div>
+  </div>
+  <div class="adm-tabs" id="adm-tabs">
+    <button class="adm-tab on" data-adm-tab="overview">Geral</button>
+    <button class="adm-tab" data-adm-tab="requests">Solicitações</button>
+    <button class="adm-tab" data-adm-tab="users">Usuários</button>
+    <button class="adm-tab" data-adm-tab="assign">Treinos</button>
+  </div>
+  <div class="adm-body" id="adm-body"><div class="adm-empty">Carregando...</div></div>
+</div>
 
-<button id="fb-user-chip" title="Sair"><span id="fb-chip-ini" style="background:var(--acc,#E83828);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:900;flex-shrink:0"></span><span id="fb-chip-label" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><span style="opacity:.6;font-size:.65rem">Sair</span></button>
+<!-- ── Status overlay (pending / rejected / suspended) ── -->
+<div id="status-ov">
+  <div class="st-box">
+    <span class="st-icon" id="st-icon">⏳</span>
+    <div class="st-title" id="st-title">Aguardando aprovação</div>
+    <div class="st-msg" id="st-msg">Seu cadastro está sendo analisado. Você receberá acesso assim que um administrador aprovar sua conta.</div>
+    <div class="st-email" id="st-email"></div>
+    <button class="st-logout" data-status-logout>Sair da conta</button>
+  </div>
+</div>
+
+<!-- ── Configurações overlay ── -->
+<div id="cfg-ov">
+  <div class="cfg-head">
+    <button data-cfg-close class="cfg-hd-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Voltar
+    </button>
+    <div class="cfg-hd-title">Configurações</div>
+    <div style="width:56px"></div>
+  </div>
+  <div class="cfg-body" id="cfg-body"></div>
+</div>
 
 
 
@@ -2094,7 +2226,7 @@ function renderPainel(){
 
 })();
 
-return`${activeCard}${todayDashHtml}${streakHtml}${wsHtml}${iniciarBtn}${goalsHtml}${_dietCard}${_muscCard}${_prCard}${_recoCard}${_pesoCard}<div class="nav-row"><button data-cal-prev>${ico('chevL',22,'#C45A1A')}</button><h2>${monthName}</h2><button data-cal-next>${ico('chevR',22,'#C45A1A')}</button></div><div class="wlbls">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(w=>`<span class="wlbl">${w}</span>`).join('')}</div><div class="cgrid">${cells}</div><div class="legend"><div class="li"><div class="ld" style="background:#6B9E52"></div>100%</div><div class="li"><div class="ld" style="background:#C45A1A"></div>50-99%</div><div class="li"><div class="ld" style="background:#8C4012"></div>&lt;50%</div></div>`;
+return`<div class="painel-top"><div class="painel-top-title">Painel</div><button class="painel-gear" data-open-cfg title="Configurações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>${activeCard}${todayDashHtml}${streakHtml}${wsHtml}${iniciarBtn}${goalsHtml}${_dietCard}${_muscCard}${_prCard}${_recoCard}${_pesoCard}<div class="nav-row"><button data-cal-prev>${ico('chevL',22,'#C45A1A')}</button><h2>${monthName}</h2><button data-cal-next>${ico('chevR',22,'#C45A1A')}</button></div><div class="wlbls">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(w=>`<span class="wlbl">${w}</span>`).join('')}</div><div class="cgrid">${cells}</div><div class="legend"><div class="li"><div class="ld" style="background:#6B9E52"></div>100%</div><div class="li"><div class="ld" style="background:#C45A1A"></div>50-99%</div><div class="li"><div class="ld" style="background:#8C4012"></div>&lt;50%</div></div>`;
 
 }
 
@@ -2191,6 +2323,315 @@ function _wkGetCustomExs(dayId){if(!dayId||!dayId.startsWith('cs_'))return null;
 function openWkBld(){const el=document.getElementById('wk-bld-ov');el.style.display='flex';el.classList.add('open');_renderWkBld();}
 
 function closeWkBld(){const el=document.getElementById('wk-bld-ov');el.classList.remove('open');el.style.display='none';S.wkBld=null;}
+
+// ── Configurações ──────────────────────────────────────────────
+function openCfg(){const el=document.getElementById('cfg-ov');el.style.display='flex';el.classList.add('open');_renderCfgBody();}
+function closeCfg(){const el=document.getElementById('cfg-ov');if(!el)return;el.classList.remove('open');el.style.display='none';}
+
+const _CFG_GOALS={hipertrofia:'Hipertrofia',emagrecimento:'Emagrecimento',forca:'Força',resistencia:'Resistência',saude:'Saúde geral'};
+const _CFG_LEVELS={iniciante:'Iniciante',intermediario:'Intermediário',avancado:'Avançado'};
+
+function _getCfgProfile(){
+  return{
+    displayName:localStorage.getItem('cfg_displayName')||window._fbDisplayName||window._fbEmail||'',
+    email:window._fbEmail||'',
+    photoURL:localStorage.getItem('cfg_photoURL')||window._fbPhotoURL||'',
+    goal:localStorage.getItem('cfg_goal')||'hipertrofia',
+    level:localStorage.getItem('cfg_level')||'iniciante',
+  };
+}
+
+function _saveCfgProfile(){
+  const name=(document.getElementById('cfg-name')?.value||'').trim();
+  const goal=document.getElementById('cfg-goal')?.value||'hipertrofia';
+  const level=document.getElementById('cfg-level')?.value||'iniciante';
+  if(!name){alert('Nome não pode ser vazio.');return;}
+  localStorage.setItem('cfg_displayName',name);
+  localStorage.setItem('cfg_goal',goal);
+  localStorage.setItem('cfg_level',level);
+  if(window._fbWrite){window._fbWrite('cfg_displayName',name);window._fbWrite('cfg_goal',goal);window._fbWrite('cfg_level',level);}
+  const t=document.createElement('div');
+  t.textContent='Perfil salvo ✓';
+  t.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:#4E7A3C;color:#fff;padding:10px 22px;border-radius:10px;font-weight:800;font-size:.85rem;z-index:9999;pointer-events:none;white-space:nowrap';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
+}
+
+function _renderCfgBody(){
+  const p=_getCfgProfile();
+  const isLight=document.documentElement.classList.contains('light');
+  const unit=localStorage.getItem('cfg_unit')||'kg';
+  const initials=(p.displayName||p.email||'?').replace(/[^a-zA-ZÀ-ÿ0-9]/g,' ').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  const avatarInner=p.photoURL?`<img src="${p.photoURL}" alt="foto" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800">${initials}</span>`:initials;
+
+  const goalOpts=Object.entries(_CFG_GOALS).map(([v,l])=>`<option value="${v}"${p.goal===v?' selected':''}>${l}</option>`).join('');
+  const levelOpts=Object.entries(_CFG_LEVELS).map(([v,l])=>`<option value="${v}"${p.level===v?' selected':''}>${l}</option>`).join('');
+
+  const bd=document.getElementById('cfg-body');if(!bd)return;
+  bd.innerHTML=`
+<div class="cfg-sec">
+  <div class="cfg-sec-lbl">Minha Conta</div>
+  <div style="display:flex;justify-content:center;padding:4px 0 2px"><div class="cfg-avatar">${avatarInner}</div></div>
+  <div style="text-align:center;font-size:.82rem;font-weight:700;padding-bottom:4px">${p.displayName||p.email}</div>
+  <div style="text-align:center;font-size:.7rem;color:var(--tx2);padding-bottom:14px;border-bottom:1px solid var(--bd)">${p.email}</div>
+  <div style="padding-bottom:14px">
+    <div class="cfg-field-lbl">Nome de exibição</div>
+    <input id="cfg-name" class="cfg-inp" value="${(p.displayName||'').replace(/"/g,'&quot;')}" placeholder="Seu nome">
+    <div class="cfg-field-lbl">E-mail (somente leitura)</div>
+    <input class="cfg-inp" value="${p.email}" readonly>
+    <div class="cfg-field-lbl">Objetivo</div>
+    <select id="cfg-goal" class="cfg-inp cfg-sel">${goalOpts}</select>
+    <div class="cfg-field-lbl">Nível de experiência</div>
+    <select id="cfg-level" class="cfg-inp cfg-sel">${levelOpts}</select>
+    <button data-cfg-save class="cfg-save-btn">Salvar alterações</button>
+  </div>
+</div>
+
+<div class="cfg-sec">
+  <div class="cfg-sec-lbl">Preferências</div>
+  <div class="cfg-row">
+    <div><div class="cfg-row-lbl">Tema</div><div class="cfg-row-sub" id="cfg-theme-lbl">${isLight?'Claro':'Escuro'}</div></div>
+    <button class="cfg-tog${isLight?' on':''}" id="cfg-theme-tog" data-cfg-theme title="Alternar tema"></button>
+  </div>
+  <div class="cfg-row">
+    <div class="cfg-row-lbl">Unidade de carga</div>
+    <div style="display:flex;gap:6px">
+      <button class="cfg-unit-btn${unit==='kg'?' on':''}" data-cfg-unit="kg">kg</button>
+      <button class="cfg-unit-btn${unit==='lb'?' on':''}" data-cfg-unit="lb">lb</button>
+    </div>
+  </div>
+</div>
+
+<div class="cfg-sec" style="background:transparent;border-color:transparent;padding:0">
+  <button data-cfg-logout class="cfg-logout-btn">Sair da conta</button>
+</div>
+${window._fbIsAdmin?`<div class="cfg-sec" style="margin-top:4px">
+  <div class="cfg-sec-lbl">Administração</div>
+  <div class="cfg-row">
+    <div><div class="cfg-row-lbl">Painel Administrativo</div><div class="cfg-row-sub">Gerenciar usuários e treinos</div></div>
+    <button data-open-admin style="padding:6px 14px;border-radius:8px;background:var(--ru);color:#fff;font-size:.78rem;font-weight:800">Acessar →</button>
+  </div>
+</div>`:''}
+`;
+}
+
+// ── Painel Administrativo ──────────────────────────────────────
+var _AS={tab:'overview',users:null,loading:false,search:'',statusFilter:'all',expandedUid:null,assignTarget:null,approveFirst:false};
+
+function openAdmin(){
+  if(!window._fbIsAdmin){alert('Acesso restrito.');return;}
+  const el=document.getElementById('admin-ov');
+  el.style.display='flex';el.classList.add('open');
+  closeCfg();
+  _AS.tab='overview';_AS.expandedUid=null;_AS.assignTarget=null;
+  document.querySelectorAll('.adm-tab').forEach(function(b){b.classList.toggle('on',b.dataset.admTab===_AS.tab);});
+  _admLoadUsers();
+}
+function closeAdmin(){const el=document.getElementById('admin-ov');if(!el)return;el.classList.remove('open');el.style.display='none';}
+
+function _admRender(){
+  const bd=document.getElementById('adm-body');if(!bd)return;
+  if(_AS.loading){bd.innerHTML='<div class="adm-empty">Carregando...</div>';return;}
+  switch(_AS.tab){
+    case'overview': bd.innerHTML=_admRenderOverview();break;
+    case'requests': bd.innerHTML=_admRenderRequests();break;
+    case'users':    bd.innerHTML=_admRenderUsers();break;
+    case'assign':   bd.innerHTML=_admRenderAssign();break;
+  }
+  const s=document.getElementById('adm-search');
+  if(s)s.addEventListener('input',function(){_AS.search=this.value;_admRender();});
+}
+
+function _admLoadUsers(){
+  if(!window._fbDb){_admRender();return;}
+  _AS.loading=true;_admRender();
+  window._fbDb.collection('users').get().then(function(snap){
+    _AS.users=[];
+    snap.forEach(function(d){var o=d.data();o.uid=d.id;_AS.users.push(o);});
+    _AS.loading=false;_admRender();
+  }).catch(function(e){console.warn('[Admin]',e.message);_AS.loading=false;_admRender();});
+}
+
+function _fmtTs(ts){
+  if(!ts)return'—';
+  try{var d=ts.toDate?ts.toDate():new Date(ts.seconds?ts.seconds*1000:ts);return d.toLocaleDateString('pt-BR');}catch(e){return'—';}
+}
+
+function _admAvatar(u){
+  var ini=((u.displayName||u.email||'?').trim().split(/\s+/).slice(0,2).map(function(w){return(w[0]||'').toUpperCase();}).join(''))||'?';
+  return u.photoURL?'<img src="'+u.photoURL+'" alt="" onerror="this.style.display=\'none\'">':ini;
+}
+
+function _admBadge(status){
+  var map={pending:{bg:'#2A2000',color:'#FFB038',lbl:'Pendente'},active:{bg:'#1A2E1A',color:'#6B9E52',lbl:'Ativo'},rejected:{bg:'#2E1A1A',color:'#E83828',lbl:'Rejeitado'},suspended:{bg:'#1A1A2E',color:'#7A7AE8',lbl:'Suspenso'}};
+  var c=map[status]||{bg:'var(--sf2)',color:'var(--tx2)',lbl:status};
+  return'<span class="adm-badge" style="background:'+c.bg+';color:'+c.color+'">'+c.lbl+'</span>';
+}
+
+function _admRenderOverview(){
+  var all=_AS.users||[];
+  var cnt={pending:0,active:0,rejected:0,suspended:0,noWorkout:0};
+  all.forEach(function(u){cnt[u.status]=(cnt[u.status]||0)+1;if(u.status==='active'&&!u.assignedProgram)cnt.noWorkout++;});
+  return'<div class="adm-sec-lbl">Resumo</div>'+
+    '<div class="adm-stat-grid">'+
+    '<div class="adm-stat"><div class="adm-stat-n" style="color:#6B9E52">'+cnt.active+'</div><div class="adm-stat-l">Ativos</div></div>'+
+    '<div class="adm-stat"><div class="adm-stat-n" style="color:#FFB038">'+cnt.pending+'</div><div class="adm-stat-l">Pendentes</div></div>'+
+    '<div class="adm-stat"><div class="adm-stat-n" style="color:#E83828">'+cnt.rejected+'</div><div class="adm-stat-l">Rejeitados</div></div>'+
+    '<div class="adm-stat"><div class="adm-stat-n" style="color:#7A7AE8">'+cnt.suspended+'</div><div class="adm-stat-l">Suspensos</div></div>'+
+    '</div>'+
+    (cnt.pending>0?'<div class="adm-alert"><span style="font-size:1.2rem">⏳</span><div><div style="font-weight:800;font-size:.82rem">'+cnt.pending+' solicitação(ões) aguardando</div><div style="font-size:.7rem;color:#FFB038;margin-top:2px">Acesse "Solicitações" para aprovar</div></div></div>':'')+
+    (cnt.noWorkout>0?'<div class="adm-alert" style="border-color:var(--ru)"><span style="font-size:1.2rem">💪</span><div><div style="font-weight:800;font-size:.82rem">'+cnt.noWorkout+' aluno(s) sem treino</div><div style="font-size:.7rem;color:#FFB038;margin-top:2px">Acesse "Treinos" para atribuir</div></div></div>':'')+
+    '<button data-adm-refresh class="adm-btn adm-btn-ghost" style="width:100%;margin-top:4px">↻ Atualizar</button>';
+}
+
+function _admRenderRequests(){
+  var list=(_AS.users||[]).filter(function(u){return u.status==='pending';});
+  if(!list.length)return'<div class="adm-empty">✓ Sem solicitações pendentes</div>';
+  return list.map(function(u){
+    var exp=_AS.expandedUid===u.uid;
+    return'<div class="adm-user-row" data-adm-expand="'+u.uid+'">'+
+      '<div class="adm-user-top">'+
+      '<div class="adm-avatar">'+_admAvatar(u)+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="adm-u-name">'+_esc(u.displayName||u.email)+'</div>'+
+      '<div class="adm-u-email">'+_esc(u.email)+'</div>'+
+      '<div style="font-size:.62rem;color:var(--tx2);margin-top:3px">Cadastro: '+_fmtTs(u.createdAt)+'</div></div>'+
+      _admBadge('pending')+'</div>'+
+      (exp?'<div class="adm-actions">'+
+        '<button class="adm-btn adm-btn-approve" data-adm-approve="'+u.uid+'">✓ Aprovar</button>'+
+        '<button class="adm-btn adm-btn-assign" data-adm-approve-assign="'+u.uid+'">✓ Aprovar + Treino</button>'+
+        '<button class="adm-btn adm-btn-reject" data-adm-reject="'+u.uid+'">✗ Rejeitar</button>'+
+        '</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+function _admRenderUsers(){
+  var list=_AS.users||[];
+  var q=(_AS.search||'').toLowerCase();
+  if(q)list=list.filter(function(u){return(u.email||'').toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q);});
+  if(_AS.statusFilter&&_AS.statusFilter!=='all')list=list.filter(function(u){return u.status===_AS.statusFilter;});
+  var filters=['all','active','pending','rejected','suspended'].map(function(f){
+    var lbls={all:'Todos',active:'Ativos',pending:'Pendentes',rejected:'Rejeit.',suspended:'Suspensos'};
+    return'<button class="adm-filter'+(_AS.statusFilter===f?' on':'')+'" data-adm-filter="'+f+'">'+lbls[f]+'</button>';
+  }).join('');
+  var rows=list.length?list.map(function(u){
+    var exp=_AS.expandedUid===u.uid;
+    var st=u.status||'pending';
+    var actions='';
+    if(st==='pending')actions='<button class="adm-btn adm-btn-approve" data-adm-approve="'+u.uid+'">Aprovar</button><button class="adm-btn adm-btn-assign" data-adm-approve-assign="'+u.uid+'">Aprovar+Treino</button><button class="adm-btn adm-btn-reject" data-adm-reject="'+u.uid+'">Rejeitar</button>';
+    else if(st==='active')actions='<button class="adm-btn adm-btn-assign" data-adm-assign="'+u.uid+'">Atribuir Treino</button><button class="adm-btn adm-btn-suspend" data-adm-suspend="'+u.uid+'">Suspender</button>';
+    else if(st==='suspended'||st==='rejected')actions='<button class="adm-btn adm-btn-reactivate" data-adm-reactivate="'+u.uid+'">Reativar</button>';
+    var prog=u.assignedProgram?(PROGRAMS||[]).find(function(p){return p.id===u.assignedProgram;}):null;
+    return'<div class="adm-user-row" data-adm-expand="'+u.uid+'">'+
+      '<div class="adm-user-top">'+
+      '<div class="adm-avatar">'+_admAvatar(u)+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="adm-u-name">'+_esc(u.displayName||'Sem nome')+'</div><div class="adm-u-email">'+_esc(u.email)+'</div></div>'+
+      _admBadge(st)+'</div>'+
+      (exp?'<div class="adm-detail">'+
+        '<div class="adm-detail-row"><span class="adm-dk">Cargo</span><span class="adm-dv">'+(u.role||'—')+'</span></div>'+
+        '<div class="adm-detail-row"><span class="adm-dk">Cadastro</span><span class="adm-dv">'+_fmtTs(u.createdAt)+'</span></div>'+
+        '<div class="adm-detail-row"><span class="adm-dk">Último acesso</span><span class="adm-dv">'+_fmtTs(u.lastLoginAt)+'</span></div>'+
+        '<div class="adm-detail-row"><span class="adm-dk">Treino</span><span class="adm-dv">'+(prog?prog.name:'— não atribuído')+'</span></div>'+
+        '</div><div class="adm-actions">'+actions+'</div>':'')+
+    '</div>';
+  }).join(''):'<div class="adm-empty">Nenhum usuário encontrado</div>';
+  return'<input class="adm-search" id="adm-search" placeholder="Buscar nome ou e-mail" value="'+_esc(_AS.search||'')+'">'+
+    '<div class="adm-filters">'+filters+'</div>'+rows;
+}
+
+function _admRenderAssign(){
+  if(_AS.assignTarget){
+    var u=(_AS.users||[]).find(function(u){return u.uid===_AS.assignTarget;});
+    var name=u?_esc(u.displayName||u.email):'Usuário';
+    var progs=(PROGRAMS||[]).concat((DB.get('wk:programs')||[]));
+    var progRows=progs.map(function(p){
+      var isCur=u&&u.assignedProgram===p.id;
+      return'<div class="adm-prog-row" data-adm-confirm-assign="'+p.id+'" style="border-color:'+(isCur?'var(--ol)':'var(--bd)')+'">'+
+        '<span style="font-size:1.5rem">'+(p.icon||'💪')+'</span>'+
+        '<div style="flex:1"><div style="font-size:.88rem;font-weight:800">'+_esc(p.name)+'</div>'+
+        '<div style="font-size:.72rem;color:var(--tx2)">'+_esc(p.desc||'')+'</div></div>'+
+        (isCur?'<span style="font-size:.62rem;font-weight:800;color:var(--ol)">ATUAL</span>':'')+
+      '</div>';
+    }).join('');
+    return'<button data-adm-cancel-assign class="adm-hd-back" style="margin-bottom:12px">← Voltar</button>'+
+      '<div style="font-size:.82rem;font-weight:800;margin-bottom:12px">Selecione o treino para <span style="color:var(--ru)">'+name+'</span>:</div>'+
+      progRows;
+  }
+  var active=(_AS.users||[]).filter(function(u){return u.status==='active';});
+  if(!active.length)return'<div class="adm-empty">Nenhum usuário ativo</div>';
+  return active.map(function(u){
+    var prog=u.assignedProgram?(PROGRAMS||[]).find(function(p){return p.id===u.assignedProgram;}):null;
+    return'<div class="adm-user-row">'+
+      '<div class="adm-user-top">'+
+      '<div class="adm-avatar">'+_admAvatar(u)+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="adm-u-name">'+_esc(u.displayName||u.email)+'</div>'+
+      '<div class="adm-u-email" style="color:'+(prog?'var(--ol)':'var(--ru)')+'">'+_esc(prog?prog.name:'— sem treino atribuído')+'</div></div>'+
+      '<button class="adm-btn adm-btn-assign" data-adm-assign="'+u.uid+'" style="flex-shrink:0">'+(u.assignedProgram?'Trocar':'Atribuir')+'</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+// ── Ações admin ────────────────────────────────────────────────
+function _admApprove(uid,cb){
+  if(!window._fbDb)return;
+  window._fbDb.collection('users').doc(uid).update({status:'active',approvedAt:firebase.firestore.FieldValue.serverTimestamp(),approvedBy:window._fbUid||''}).then(function(){
+    var u=(_AS.users||[]).find(function(u){return u.uid===uid;});if(u)u.status='active';
+    _admAudit('approve',uid,{});
+    _AS.expandedUid=null;_admRender();
+    if(cb)cb();
+  }).catch(function(e){alert('Erro: '+e.message);});
+}
+
+function _admReject(uid){
+  var reason=prompt('Motivo da rejeição (opcional):');if(reason===null)return;
+  if(!window._fbDb)return;
+  window._fbDb.collection('users').doc(uid).update({status:'rejected',rejectedAt:firebase.firestore.FieldValue.serverTimestamp(),rejectedBy:window._fbUid||'',rejectionReason:reason||''}).then(function(){
+    var u=(_AS.users||[]).find(function(u){return u.uid===uid;});if(u)u.status='rejected';
+    _admAudit('reject',uid,{reason:reason});
+    _AS.expandedUid=null;_admRender();
+  }).catch(function(e){alert('Erro: '+e.message);});
+}
+
+function _admSuspend(uid){
+  if(!confirm('Suspender este usuário?'))return;
+  if(!window._fbDb)return;
+  window._fbDb.collection('users').doc(uid).update({status:'suspended',suspendedAt:firebase.firestore.FieldValue.serverTimestamp(),suspendedBy:window._fbUid||''}).then(function(){
+    var u=(_AS.users||[]).find(function(u){return u.uid===uid;});if(u)u.status='suspended';
+    _admAudit('suspend',uid,{});
+    _AS.expandedUid=null;_admRender();
+  }).catch(function(e){alert('Erro: '+e.message);});
+}
+
+function _admReactivate(uid){
+  if(!confirm('Reativar este usuário?'))return;
+  if(!window._fbDb)return;
+  window._fbDb.collection('users').doc(uid).update({status:'active',reactivatedAt:firebase.firestore.FieldValue.serverTimestamp(),reactivatedBy:window._fbUid||''}).then(function(){
+    var u=(_AS.users||[]).find(function(u){return u.uid===uid;});if(u)u.status='active';
+    _admAudit('reactivate',uid,{});
+    _AS.expandedUid=null;_admRender();
+  }).catch(function(e){alert('Erro: '+e.message);});
+}
+
+function _admAssignProgram(uid,programId){
+  if(!window._fbDb)return;
+  var prog=(PROGRAMS||[]).find(function(p){return p.id===programId;})||(DB.get('wk:programs')||[]).find(function(p){return p.id===programId;});
+  var now=firebase.firestore.FieldValue.serverTimestamp();
+  window._fbDb.collection('users').doc(uid).update({assignedProgram:programId,assignedProgramName:prog?prog.name:'',assignedAt:now,assignedBy:window._fbUid||''}).then(function(){
+    window._fbDb.collection('workoutAssignments').add({userId:uid,programId:programId,programName:prog?prog.name:'',assignedAt:now,assignedBy:window._fbUid||''}).catch(function(){});
+    var u=(_AS.users||[]).find(function(u){return u.uid===uid;});if(u){u.assignedProgram=programId;u.assignedProgramName=prog?prog.name:'';}
+    _admAudit('assignWorkout',uid,{programId:programId});
+    _AS.assignTarget=null;_AS.approveFirst=false;_AS.tab='users';
+    document.querySelectorAll('.adm-tab').forEach(function(b){b.classList.toggle('on',b.dataset.admTab==='users');});
+    _admRender();
+    var t=document.createElement('div');t.textContent='Treino atribuído ✓';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4E7A3C;color:#fff;padding:10px 22px;border-radius:10px;font-weight:800;font-size:.85rem;z-index:9999;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(t);setTimeout(function(){t.remove();},2200);
+  }).catch(function(e){alert('Erro: '+e.message);});
+}
+
+function _admAudit(action,targetUid,details){
+  if(!window._fbDb||!window._fbUid)return;
+  window._fbDb.collection('auditLogs').add({action:action,adminUid:window._fbUid,adminEmail:window._fbEmail||'',targetUid:targetUid,details:details||{},ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
+}
 
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -4286,7 +4727,7 @@ function _drawEvoCharts(){
 
 function renderContent(){switch(S.tab){case'painel':return renderPainel();case'treino':return renderTreino();case'musculos':return renderMusculos();case'dieta':return renderDieta();case'progresso':return renderProgresso();}}
 
-function mount(){if(S.tab!=='treino')closeWkBld();document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function mount(){closeCfg();if(S.tab!=='treino')closeWkBld();document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
 function remountContent(){if(S.tab!=='treino')closeWkBld();document.getElementById('content').innerHTML=renderContent();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
@@ -4507,6 +4948,38 @@ document.addEventListener('click',e=>{
   if(t.closest('[data-back-programs]')){S.treinoView='programs';S.treinoProgram=null;remountContent();return;}
 
   if(t.closest('[data-back-splits]')){S.treinoView='splits';remountContent();return;}
+
+  // Logout da tela de status (pending/rejected/suspended)
+  if(t.closest('[data-status-logout]')){
+    try{localStorage.removeItem('_lgd_u');}catch(e){}
+    if(window._fbAuth)window._fbAuth.signOut();
+    window._fbUid=null;window._fbEmail=null;window._fbIsAdmin=false;window._fbRole=null;
+    var _stOv=document.getElementById('status-ov');if(_stOv)_stOv.classList.remove('show');
+    if(window._fbShowLogin)window._fbShowLogin();
+    return;
+  }
+
+  // Configurações
+  if(t.closest('[data-open-cfg]')){openCfg();return;}
+  if(t.closest('[data-cfg-close]')){closeCfg();return;}
+  if(t.closest('[data-cfg-save]')){_saveCfgProfile();return;}
+  if(t.closest('[data-cfg-theme]')){const isL=document.documentElement.classList.contains('light');const nxt=isL?'dark':'light';localStorage.setItem('theme',nxt);applyTheme(nxt);const tog=document.getElementById('cfg-theme-tog');if(tog){tog.classList.toggle('on',nxt==='light');}const lbl=document.getElementById('cfg-theme-lbl');if(lbl)lbl.textContent=nxt==='light'?'Claro':'Escuro';return;}
+  const cfgUnit=t.closest('[data-cfg-unit]');if(cfgUnit){const u=cfgUnit.dataset.cfgUnit;localStorage.setItem('cfg_unit',u);if(window._fbWrite)window._fbWrite('cfg_unit',u);document.querySelectorAll('[data-cfg-unit]').forEach(b=>b.classList.toggle('on',b.dataset.cfgUnit===u));return;}
+  if(t.closest('[data-cfg-logout]')){if(!confirm('Sair da conta?'))return;try{localStorage.removeItem('_lgd_u');}catch(e){}if(window._fbAuth)window._fbAuth.signOut();window._fbUid=null;window._fbEmail=null;window._fbIsAdmin=false;window._lgdSaved=null;closeCfg();if(window._fbShowLogin)window._fbShowLogin();return;}
+  if(t.closest('[data-open-admin]')){openAdmin();return;}
+  if(t.closest('[data-admin-close]')){closeAdmin();return;}
+  const admTab=t.closest('[data-adm-tab]');if(admTab){_AS.tab=admTab.dataset.admTab;_AS.expandedUid=null;_AS.search='';document.querySelectorAll('.adm-tab').forEach(function(b){b.classList.toggle('on',b.dataset.admTab===_AS.tab);});_admRender();return;}
+  const admExpand=t.closest('[data-adm-expand]');if(admExpand){const uid=admExpand.dataset.admExpand;_AS.expandedUid=_AS.expandedUid===uid?null:uid;_admRender();return;}
+  if(t.closest('[data-adm-refresh]')){_admLoadUsers();return;}
+  const admFilter=t.closest('[data-adm-filter]');if(admFilter){_AS.statusFilter=admFilter.dataset.admFilter;_AS.expandedUid=null;_admRender();return;}
+  const admApprove=t.closest('[data-adm-approve]');if(admApprove){_admApprove(admApprove.dataset.admApprove);return;}
+  const admApproveAssign=t.closest('[data-adm-approve-assign]');if(admApproveAssign){const uid=admApproveAssign.dataset.admApproveAssign;_admApprove(uid,function(){_AS.approveFirst=true;_AS.assignTarget=uid;_AS.tab='assign';document.querySelectorAll('.adm-tab').forEach(function(b){b.classList.toggle('on',b.dataset.admTab==='assign');});_admRender();});return;}
+  const admAssign=t.closest('[data-adm-assign]');if(admAssign){_AS.assignTarget=admAssign.dataset.admAssign;_admRender();return;}
+  const admConfirmAssign=t.closest('[data-adm-confirm-assign]');if(admConfirmAssign&&_AS.assignTarget){_admAssignProgram(_AS.assignTarget,admConfirmAssign.dataset.admConfirmAssign);return;}
+  if(t.closest('[data-adm-cancel-assign]')){_AS.assignTarget=null;_admRender();return;}
+  const admReject=t.closest('[data-adm-reject]');if(admReject){_admReject(admReject.dataset.admReject);return;}
+  const admSuspend=t.closest('[data-adm-suspend]');if(admSuspend){_admSuspend(admSuspend.dataset.admSuspend);return;}
+  const admReactivate=t.closest('[data-adm-reactivate]');if(admReactivate){_admReactivate(admReactivate.dataset.admReactivate);return;}
 
   const nb=t.closest('[data-tab]');if(nb){S.tab=nb.dataset.tab;S.histEx=null;if(nb.dataset.tab==='treino'&&!S.treinoProgram)S.treinoView='programs';closeWkBld();mount();return;}
 
@@ -4975,6 +5448,28 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
   function _fbHideLogin(){var ov=document.getElementById('fb-login');if(ov)ov.style.display='none';}
 
+  var _STATUS_CFG={
+    pending:{icon:'⏳',title:'Aguardando aprovação',msg:'Seu cadastro está sendo analisado. Você receberá acesso assim que um administrador aprovar sua conta.'},
+    rejected:{icon:'❌',title:'Cadastro não aprovado',msg:'Infelizmente seu cadastro não foi aprovado. Entre em contato com o administrador para mais informações.'},
+    suspended:{icon:'🚫',title:'Conta suspensa',msg:'Sua conta foi temporariamente suspensa. Entre em contato com o administrador.'},
+  };
+
+  function _showStatusOv(status,email){
+    var c=_STATUS_CFG[status]||_STATUS_CFG.pending;
+    var ov=document.getElementById('status-ov');
+    var icon=document.getElementById('st-icon');
+    var title=document.getElementById('st-title');
+    var msg=document.getElementById('st-msg');
+    var emailEl=document.getElementById('st-email');
+    if(icon)icon.textContent=c.icon;
+    if(title)title.textContent=c.title;
+    if(msg)msg.textContent=c.msg;
+    if(emailEl)emailEl.textContent=email||'';
+    if(ov)ov.classList.add('show');
+  }
+
+  function _hideStatusOv(){var ov=document.getElementById('status-ov');if(ov)ov.classList.remove('show');}
+
   function _fbSetChip(email){
 
     var chip=document.getElementById('fb-user-chip');
@@ -5050,8 +5545,10 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
       firebase.initializeApp(_FCG);
 
       var _auth=firebase.auth();
+      window._fbAuth=_auth;
 
       var _db=firebase.firestore();
+      window._fbDb=_db;
 
       var _gprov=new firebase.auth.GoogleAuthProvider();
 
@@ -5075,13 +5572,23 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         try{var s=localStorage.getItem('_lgd_u');if(s){var u=JSON.parse(s);if(u&&u.email)return u;}}catch(e){}return null;
       })();
 
-      // Se usuário já entrou antes → mostrar app imediatamente, sem esperar Firebase
+      // Fast-path: se usuário já entrou antes, decide imediatamente (sem esperar Firebase)
+      window._fbAuth=null;window._fbShowLogin=_fbShowLogin;
       if(_lgdSaved){
-        _fbHideLogin();
-        _fbSetChip(_lgdSaved.email);
         window._fbEmail=_lgdSaved.email;
         window._fbUid=_lgdSaved.uid||'';
-        window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
+        window._fbRole=_lgdSaved.role||'student';
+        window._fbIsAdmin=_lgdSaved.role==='owner'||_lgdSaved.role==='admin'||_ADMIN.indexOf((_lgdSaved.email||'').toLowerCase())>=0;
+        window._fbPhotoURL=localStorage.getItem('cfg_photoURL')||'';
+        window._fbDisplayName=localStorage.getItem('cfg_displayName')||'';
+        // status ausente (sessão anterior à Fase 2) → tratar como active se for pré-auth
+        var _savedStatus=_lgdSaved.status;
+        var _savedPreAuth=_ALLOWED.indexOf((_lgdSaved.email||'').toLowerCase())>=0;
+        if(!_savedStatus||_savedStatus==='active'||_savedPreAuth){
+          _fbHideLogin();_fbSetChip(_lgdSaved.email);
+        }else{
+          _fbHideLogin();_showStatusOv(_savedStatus,_lgdSaved.email);
+        }
       }
 
       // Chave interna do Firebase no localStorage — backup caso IndexedDB falhe
@@ -5091,22 +5598,87 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         try{localStorage.setItem(_FB_LS_KEY,JSON.stringify(user.toJSON()));}catch(e){}
       }
 
+      // Roles pré-autorizados (sem precisar de aprovação manual)
+      var _OWNERS=['fernandobeckman2007@gmail.com'];
+      var _ADMINS_STATIC=['apollws@gmail.com'];
+
+      function _roleOf(email){
+        var e=(email||'').toLowerCase();
+        if(_OWNERS.indexOf(e)>=0)return'owner';
+        if(_ADMINS_STATIC.indexOf(e)>=0)return'admin';
+        return'student';
+      }
+      function _isPreAuth(email){
+        var e=(email||'').toLowerCase();
+        return _OWNERS.indexOf(e)>=0||_ADMINS_STATIC.indexOf(e)>=0;
+      }
+
+      function _checkAndHandleUserStatus(user){
+        var email=user.email||'';
+        var uid=user.uid;
+        var preAuth=_isPreAuth(email);
+        var role=_roleOf(email);
+        var userRef=_db.collection('users').doc(uid);
+
+        return userRef.get().then(function(snap){
+          if(!snap.exists){
+            var status=preAuth?'active':'pending';
+            var now=firebase.firestore.FieldValue.serverTimestamp();
+            return userRef.set({
+              email:email,
+              displayName:user.displayName||'',
+              photoURL:user.photoURL||'',
+              role:role,
+              status:status,
+              createdAt:now,
+              lastLoginAt:now,
+              approvedAt:preAuth?now:null,
+              approvedBy:preAuth?'system':null,
+            }).then(function(){return{status:status,role:role};});
+          }
+          var data=snap.data();
+          var status=data.status||(preAuth?'active':'pending');
+          role=data.role||role;
+          // Pre-auth nunca fica bloqueado
+          if(preAuth&&status!=='active'){
+            status='active';
+            userRef.update({status:'active',role:role,lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
+          }else{
+            userRef.update({lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
+          }
+          return{status:status,role:role};
+        }).catch(function(err){
+          console.warn('[Firebase] userStatus:',err.message);
+          return{status:preAuth?'active':'pending',role:role};
+        });
+      }
+
       function _salvarEMostrarApp(user){
-        var email=(user.email||'').toLowerCase();
-        if(_ALLOWED.indexOf(email)<0){
-          _auth.signOut();
-          try{localStorage.removeItem('_lgd_u');localStorage.removeItem(_FB_LS_KEY);}catch(e){}
-          _lgdSaved=null;
-          _fbShowLogin('E-mail não autorizado: '+user.email);
-          return;
-        }
         window._fbUid=user.uid;window._fbEmail=user.email;
-        window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
-        _lgdSaved={uid:user.uid,email:user.email};
-        try{localStorage.setItem('_lgd_u',JSON.stringify(_lgdSaved));}catch(e){}
-        _backupFirebaseUser(user); // backup na chave interna do Firebase
-        _fbHideLogin();_fbSetChip(user.email);
-        _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync:',e.message);});
+        window._fbPhotoURL=user.photoURL||'';
+        window._fbDisplayName=user.displayName||'';
+        if(!localStorage.getItem('cfg_displayName')&&user.displayName)localStorage.setItem('cfg_displayName',user.displayName);
+        if(!localStorage.getItem('cfg_photoURL')&&user.photoURL)localStorage.setItem('cfg_photoURL',user.photoURL);
+        _backupFirebaseUser(user);
+        window._fbAuth=_auth;
+        window._fbShowLogin=_fbShowLogin;
+
+        _checkAndHandleUserStatus(user).then(function(result){
+          var status=result.status;var role=result.role;
+          window._fbIsAdmin=role==='owner'||role==='admin';
+          window._fbRole=role;
+          _lgdSaved={uid:user.uid,email:user.email,status:status,role:role};
+          try{localStorage.setItem('_lgd_u',JSON.stringify(_lgdSaved));}catch(e){}
+
+          if(status==='active'){
+            _hideStatusOv();
+            _fbHideLogin();_fbSetChip(user.email);
+            _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync:',e.message);});
+          }else{
+            _fbHideLogin();
+            _showStatusOv(status,user.email);
+          }
+        });
       }
 
       // onAuthStateChanged: atualiza backup a cada login confirmado pelo Firebase
