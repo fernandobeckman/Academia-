@@ -150,7 +150,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
 .ex-skip-btn{padding:6px 14px;border-radius:20px;background:none;border:1px solid var(--bd);color:var(--tx2);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;display:block;margin:8px auto}
 
-.wk-bld-ov{position:fixed;inset:0;background:var(--bg);z-index:260;display:none;flex-direction:column;max-width:430px;left:50%;transform:translateX(-50%)}
+.wk-bld-ov{position:fixed;inset:0;background:var(--bg);z-index:260;display:none;flex-direction:column}
 
 .wk-bld-ov.open{display:flex}
 
@@ -678,7 +678,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:
 
 /* ── Onboarding ── */
 
-#onboarding{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;align-items:center;justify-content:center;max-width:430px;left:50%;transform:translateX(-50%);transition:opacity .3s}
+#onboarding{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
 
 #onboarding.hidden{display:none}
 
@@ -2188,9 +2188,9 @@ function renderTreinoPrograms(){
 
 function _wkGetCustomExs(dayId){if(!dayId||!dayId.startsWith('cs_'))return null;return DB.get('wk:split:'+dayId)?.exs||null;}
 
-function openWkBld(){document.getElementById('wk-bld-ov').classList.add('open');_renderWkBld();}
+function openWkBld(){const el=document.getElementById('wk-bld-ov');el.style.display='flex';el.classList.add('open');_renderWkBld();}
 
-function closeWkBld(){document.getElementById('wk-bld-ov').classList.remove('open');S.wkBld=null;}
+function closeWkBld(){const el=document.getElementById('wk-bld-ov');el.classList.remove('open');el.style.display='none';S.wkBld=null;}
 
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -4286,9 +4286,9 @@ function _drawEvoCharts(){
 
 function renderContent(){switch(S.tab){case'painel':return renderPainel();case'treino':return renderTreino();case'musculos':return renderMusculos();case'dieta':return renderDieta();case'progresso':return renderProgresso();}}
 
-function mount(){document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function mount(){if(S.tab!=='treino')closeWkBld();document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
-function remountContent(){document.getElementById('content').innerHTML=renderContent();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function remountContent(){if(S.tab!=='treino')closeWkBld();document.getElementById('content').innerHTML=renderContent();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
 // Cache de instruções dos exercícios (free-exercise-db)
 
@@ -5084,19 +5084,18 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
       }
 
-      // onAuthStateChanged: usado apenas para confirmar login real do Firebase
-      // Se Firebase diz null → NÃO fazer nada (localStorage já controla a sessão)
-      // Se Firebase diz user → salvar no localStorage e sincronizar dados
-      _auth.onAuthStateChanged(function(user){
-        if(!user){
-          // Null do Firebase não significa logout — só mostra login se localStorage tbm vazio
-          if(!_lgdSaved)_fbShowLogin();
-          return;
-        }
+      // Chave interna do Firebase no localStorage — backup caso IndexedDB falhe
+      var _FB_LS_KEY='firebase:authUser:AIzaSyCehYnS2QK_8gFip4bggqTixvqalrrPSPA:[DEFAULT]';
+
+      function _backupFirebaseUser(user){
+        try{localStorage.setItem(_FB_LS_KEY,JSON.stringify(user.toJSON()));}catch(e){}
+      }
+
+      function _salvarEMostrarApp(user){
         var email=(user.email||'').toLowerCase();
         if(_ALLOWED.indexOf(email)<0){
           _auth.signOut();
-          try{localStorage.removeItem('_lgd_u');}catch(e){}
+          try{localStorage.removeItem('_lgd_u');localStorage.removeItem(_FB_LS_KEY);}catch(e){}
           _lgdSaved=null;
           _fbShowLogin('E-mail não autorizado: '+user.email);
           return;
@@ -5105,15 +5104,22 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
         _lgdSaved={uid:user.uid,email:user.email};
         try{localStorage.setItem('_lgd_u',JSON.stringify(_lgdSaved));}catch(e){}
+        _backupFirebaseUser(user); // backup na chave interna do Firebase
         _fbHideLogin();_fbSetChip(user.email);
         _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync:',e.message);});
+      }
+
+      // onAuthStateChanged: atualiza backup a cada login confirmado pelo Firebase
+      // onAuthStateChanged(null) NÃO mostra login se _lgdSaved estiver preenchido
+      _auth.onAuthStateChanged(function(user){
+        if(user){_salvarEMostrarApp(user);return;}
+        // null do Firebase: só mostra login se também não temos localStorage
+        if(!_lgdSaved)_fbShowLogin();
       });
 
-      // Capturar redirect de login anterior (com timeout para não travar)
-      Promise.race([
-        _auth.getRedirectResult(),
-        new Promise(function(res){setTimeout(res,4000);})
-      ]).catch(function(e){console.warn('[Auth] redirect:',e.message);})
+      // getRedirectResult: captura eventual redirect anterior (não usamos mais, mas não faz mal)
+      _auth.getRedirectResult()
+        .catch(function(e){console.warn('[Auth] redirect:',e.message);})
         .finally(function(){window._fbEnableBtnOnce();});
 
       // ── Botão Entrar com Google ──────────────────────────────────────────
@@ -5121,21 +5127,38 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
       if(btn)btn.addEventListener('click',function(){
         var errEl=document.getElementById('fb-login-err');
         var lbl=document.getElementById('fb-btn-txt');
-        if(lbl)lbl.textContent='Abrindo login...';
         if(errEl)errEl.textContent='';
-        _auth.signInWithPopup(_gprov).catch(function(e){
-          var bloq=e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request';
-          if(bloq){
-            if(lbl)lbl.textContent='Redirecionando...';
-            _auth.signInWithRedirect(_gprov).catch(function(e2){
+        if(lbl)lbl.textContent='Entrando...';
+
+        // Popup em mobile e desktop — Firebase abre nova aba no Android
+        // Se o IndexedDB fechar durante o popup, capturamos em onAuthStateChanged ANTES do erro
+        _auth.signInWithPopup(_gprov)
+          .then(function(r){
+            // Sucesso normal — backup e mostra app
+            if(r&&r.user){_backupFirebaseUser(r.user);_salvarEMostrarApp(r.user);}
+          })
+          .catch(function(e){
+            console.error('[Auth] popup:',e.code,e.message);
+            var fechou=e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request';
+            var dbErr=!e.code&&e.message&&(e.message.indexOf('atabase')>=0||e.message.indexOf('closing')>=0||e.message.indexOf('hidden')>=0);
+            if(fechou){
+              // Usuário fechou o popup — não é erro
+              if(lbl)lbl.textContent='Entrar com Google';
+            }else if(dbErr){
+              // IndexedDB fechou durante o popup — verificar se onAuthStateChanged já pegou o usuário
+              // Se _lgdSaved foi preenchido pelo onAuthStateChanged(user) que disparou ANTES do erro,
+              // o app já está aberto. Senão, tentar pegar de currentUser.
+              setTimeout(function(){
+                if(_lgdSaved){return;} // onAuthStateChanged já tratou
+                var u=_auth.currentUser;
+                if(u){_backupFirebaseUser(u);_salvarEMostrarApp(u);}
+                else{if(errEl)errEl.textContent='Erro ao entrar. Tente novamente.';if(lbl)lbl.textContent='Entrar com Google';}
+              },500);
+            }else{
               if(errEl)errEl.textContent='Erro ao entrar. Tente novamente.';
               if(lbl)lbl.textContent='Entrar com Google';
-            });
-          }else{
-            if(errEl)errEl.textContent='Erro ao entrar. Tente novamente.';
-            if(lbl)lbl.textContent='Entrar com Google';
-          }
-        });
+            }
+          });
       });
 
       // ── Botão Sair ───────────────────────────────────────────────────────
