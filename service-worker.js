@@ -1,4 +1,4 @@
-const CACHE_NAME = "legende-v9";
+const CACHE_NAME = "legende-v10";
 const ASSETS = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./musc-map.jpg"];
 
 self.addEventListener("install", (event) => {
