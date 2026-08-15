@@ -1,5 +1,5 @@
-const CACHE_NAME = "legende-v14";
-const ASSETS = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./musc-map.jpg"];
+const CACHE_NAME = "legende-v15";
+const ASSETS = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./musc-map.jpg", "./freaky-season.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
