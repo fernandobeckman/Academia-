@@ -5053,6 +5053,9 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
       var _db=firebase.firestore();
 
+      // Desabilitar cache IndexedDB do Firestore (causa "Database is closing/hidden" no Android)
+      _db.settings({experimentalForceLongPolling:true,merge:true});
+
       var _gprov=new firebase.auth.GoogleAuthProvider();
 
 
@@ -5070,17 +5073,35 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
 
       // Login otimista: se usuário já entrou antes, esconde tela de login imediatamente
+      var _lgdSaved=(function(){
+        try{var s=localStorage.getItem('_lgd_u');if(s)return JSON.parse(s);}catch(e){}return null;
+      })();
+      if(_lgdSaved&&_lgdSaved.email){_fbHideLogin();_fbSetChip(_lgdSaved.email);window._fbEmail=_lgdSaved.email;window._fbUid=_lgdSaved.uid||'';}
+
+      // Flag: IndexedDB falhou → não confiar em user=null do Firebase como logout real
+      var _idbFailed=false;
+
+      // Filtrar erro "closing/hidden" do elemento de erro (MutationObserver)
       (function(){
-        try{
-          var saved=localStorage.getItem('_lgd_u');
-          if(saved){var u=JSON.parse(saved);if(u&&u.email){_fbHideLogin();_fbSetChip(u.email);}}
-        }catch(e){}
+        var errEl=document.getElementById('fb-login-err');
+        if(!errEl)return;
+        var obs=new MutationObserver(function(){
+          if(errEl.textContent&&(errEl.textContent.indexOf('closing')>=0||errEl.textContent.indexOf('hidden')>=0||errEl.textContent.indexOf('Database')>=0)){errEl.textContent='';}
+        });
+        obs.observe(errEl,{childList:true,characterData:true,subtree:true});
       })();
 
       _auth.onAuthStateChanged(function(user){
 
         if(!user){
+          // Se IndexedDB falhou E temos usuário salvo → manter sessão (Firebase não achou as credenciais por erro de DB)
+          if(_idbFailed&&_lgdSaved&&_lgdSaved.email&&_ALLOWED.indexOf(_lgdSaved.email.toLowerCase())>=0){
+            window._fbUid=_lgdSaved.uid||'';window._fbEmail=_lgdSaved.email;
+            window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
+            _fbHideLogin();_fbSetChip(_lgdSaved.email);return;
+          }
           try{localStorage.removeItem('_lgd_u');}catch(e){}
+          _lgdSaved=null;
           _fbShowLogin();return;
         }
 
@@ -5113,7 +5134,7 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
       _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
-        .catch(function(){return _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});})
+        .catch(function(e){_idbFailed=true;console.warn('[Auth] IndexedDB falhou, usando SESSION:',e.message);return _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});})
 
 
         .then(function(){return _auth.getRedirectResult();})
