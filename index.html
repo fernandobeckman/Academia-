@@ -5091,59 +5091,51 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         obs.observe(errEl,{childList:true,characterData:true,subtree:true});
       })();
 
-      _auth.onAuthStateChanged(function(user){
-
-        if(!user){
-          // Se IndexedDB falhou E temos usuário salvo → manter sessão (Firebase não achou as credenciais por erro de DB)
-          if(_idbFailed&&_lgdSaved&&_lgdSaved.email&&_ALLOWED.indexOf(_lgdSaved.email.toLowerCase())>=0){
-            window._fbUid=_lgdSaved.uid||'';window._fbEmail=_lgdSaved.email;
-            window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
-            _fbHideLogin();_fbSetChip(_lgdSaved.email);return;
-          }
-          try{localStorage.removeItem('_lgd_u');}catch(e){}
-          _lgdSaved=null;
-          _fbShowLogin();return;
-        }
-
-        var email=(user.email||'').toLowerCase();
-
-        if(_ALLOWED.indexOf(email)<0){
-
-          _auth.signOut();_fbShowLogin('E-mail não autorizado: '+user.email);return;
-
-        }
-
-        window._fbUid=user.uid;window._fbEmail=user.email;
-
-        window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
-
-        // Salvar usuário no localStorage para login otimista na próxima abertura
-        try{localStorage.setItem('_lgd_u',JSON.stringify({uid:user.uid,email:user.email}));}catch(e){}
-
-        _fbHideLogin();_fbSetChip(user.email);
-
-        _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync erro:',e.message);});
-
-      });
-
-
-
-      // Persistência LOCAL (IndexedDB) com fallback para SESSION se IndexedDB fechar
-
-      // e capturar redirect anterior se houver — encadeado para garantir ordem
+      // IMPORTANTE: setPersistence PRIMEIRO, onAuthStateChanged DEPOIS
+      // Assim _idbFailed está correto quando onAuthStateChanged disparar
 
       _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
-        .catch(function(e){_idbFailed=true;console.warn('[Auth] IndexedDB falhou, usando SESSION:',e.message);return _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});})
-
+        .catch(function(e){_idbFailed=true;console.warn('[Auth] IndexedDB falhou:',e.message);return _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});})
 
         .then(function(){return _auth.getRedirectResult();})
 
-        .then(function(r){if(r&&r.user)console.log('[Auth] redirect captado:',r.user.email);})
+        .then(function(r){if(r&&r.user)console.log('[Auth] redirect:',r.user.email);})
 
         .catch(function(e){console.warn('[Auth] redirect err:',e.message);})
 
-        .finally(function(){window._fbEnableBtnOnce();});
+        .finally(function(){
+
+          window._fbEnableBtnOnce();
+
+          // Registrar onAuthStateChanged aqui — _idbFailed já foi definido corretamente
+          _auth.onAuthStateChanged(function(user){
+
+            if(!user){
+              // IndexedDB falhou E temos usuário salvo → manter sessão
+              if(_idbFailed&&_lgdSaved&&_lgdSaved.email&&_ALLOWED.indexOf(_lgdSaved.email.toLowerCase())>=0){
+                window._fbUid=_lgdSaved.uid||'';window._fbEmail=_lgdSaved.email;
+                window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
+                _fbHideLogin();_fbSetChip(_lgdSaved.email);return;
+              }
+              try{localStorage.removeItem('_lgd_u');}catch(e){}
+              _lgdSaved=null;
+              _fbShowLogin();return;
+            }
+
+            var email=(user.email||'').toLowerCase();
+            if(_ALLOWED.indexOf(email)<0){_auth.signOut();_fbShowLogin('E-mail não autorizado: '+user.email);return;}
+
+            window._fbUid=user.uid;window._fbEmail=user.email;
+            window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
+            try{localStorage.setItem('_lgd_u',JSON.stringify({uid:user.uid,email:user.email}));}catch(e){}
+            _lgdSaved={uid:user.uid,email:user.email};
+            _fbHideLogin();_fbSetChip(user.email);
+            _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync erro:',e.message);});
+
+          });
+
+        });
 
 
 
