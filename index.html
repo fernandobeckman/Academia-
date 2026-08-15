@@ -4966,7 +4966,10 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
     if(ov)ov.style.display='flex';
 
-    if(el)el.textContent=err||'';
+    // Filtrar erros técnicos do IndexedDB — não mostrar ao usuário
+    var errFiltrado=err&&(err.indexOf('closing')>=0||err.indexOf('hidden')>=0||err.indexOf('IndexedDB')>=0)?'':err||'';
+
+    if(el)el.textContent=errFiltrado;
 
   }
 
@@ -5066,9 +5069,20 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
 
 
+      // Login otimista: se usuário já entrou antes, esconde tela de login imediatamente
+      (function(){
+        try{
+          var saved=localStorage.getItem('_lgd_u');
+          if(saved){var u=JSON.parse(saved);if(u&&u.email){_fbHideLogin();_fbSetChip(u.email);}}
+        }catch(e){}
+      })();
+
       _auth.onAuthStateChanged(function(user){
 
-        if(!user){_fbShowLogin();return;}
+        if(!user){
+          try{localStorage.removeItem('_lgd_u');}catch(e){}
+          _fbShowLogin();return;
+        }
 
         var email=(user.email||'').toLowerCase();
 
@@ -5081,6 +5095,9 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
         window._fbUid=user.uid;window._fbEmail=user.email;
 
         window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
+
+        // Salvar usuário no localStorage para login otimista na próxima abertura
+        try{localStorage.setItem('_lgd_u',JSON.stringify({uid:user.uid,email:user.email}));}catch(e){}
 
         _fbHideLogin();_fbSetChip(user.email);
 
