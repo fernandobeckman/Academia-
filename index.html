@@ -5053,9 +5053,6 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
       var _db=firebase.firestore();
 
-      // Desabilitar cache IndexedDB do Firestore (causa "Database is closing/hidden" no Android)
-      _db.settings({experimentalForceLongPolling:true,merge:true});
-
       var _gprov=new firebase.auth.GoogleAuthProvider();
 
 
@@ -5073,128 +5070,84 @@ setTimeout(function(){window._fbEnableBtnOnce();},5000);
 
 
       // Login otimista: se usuário já entrou antes, esconde tela de login imediatamente
+      // ── Sessão via localStorage (não depende de IndexedDB) ─────────────────
       var _lgdSaved=(function(){
-        try{var s=localStorage.getItem('_lgd_u');if(s)return JSON.parse(s);}catch(e){}return null;
-      })();
-      if(_lgdSaved&&_lgdSaved.email){_fbHideLogin();_fbSetChip(_lgdSaved.email);window._fbEmail=_lgdSaved.email;window._fbUid=_lgdSaved.uid||'';}
-
-      // Flag: IndexedDB falhou → não confiar em user=null do Firebase como logout real
-      var _idbFailed=false;
-
-      // Filtrar erro "closing/hidden" do elemento de erro (MutationObserver)
-      (function(){
-        var errEl=document.getElementById('fb-login-err');
-        if(!errEl)return;
-        var obs=new MutationObserver(function(){
-          if(errEl.textContent&&(errEl.textContent.indexOf('closing')>=0||errEl.textContent.indexOf('hidden')>=0||errEl.textContent.indexOf('Database')>=0)){errEl.textContent='';}
-        });
-        obs.observe(errEl,{childList:true,characterData:true,subtree:true});
+        try{var s=localStorage.getItem('_lgd_u');if(s){var u=JSON.parse(s);if(u&&u.email)return u;}}catch(e){}return null;
       })();
 
-      // IMPORTANTE: setPersistence PRIMEIRO, onAuthStateChanged DEPOIS
-      // Assim _idbFailed está correto quando onAuthStateChanged disparar
+      // Se usuário já entrou antes → mostrar app imediatamente, sem esperar Firebase
+      if(_lgdSaved){
+        _fbHideLogin();
+        _fbSetChip(_lgdSaved.email);
+        window._fbEmail=_lgdSaved.email;
+        window._fbUid=_lgdSaved.uid||'';
+        window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
+      }
 
-      _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-
-        .catch(function(e){_idbFailed=true;console.warn('[Auth] IndexedDB falhou:',e.message);return _auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});})
-
-        .then(function(){return _auth.getRedirectResult();})
-
-        .then(function(r){if(r&&r.user)console.log('[Auth] redirect:',r.user.email);})
-
-        .catch(function(e){console.warn('[Auth] redirect err:',e.message);})
-
-        .finally(function(){
-
-          window._fbEnableBtnOnce();
-
-          // Registrar onAuthStateChanged aqui — _idbFailed já foi definido corretamente
-          _auth.onAuthStateChanged(function(user){
-
-            if(!user){
-              // IndexedDB falhou E temos usuário salvo → manter sessão
-              if(_idbFailed&&_lgdSaved&&_lgdSaved.email&&_ALLOWED.indexOf(_lgdSaved.email.toLowerCase())>=0){
-                window._fbUid=_lgdSaved.uid||'';window._fbEmail=_lgdSaved.email;
-                window._fbIsAdmin=_ADMIN.indexOf(_lgdSaved.email.toLowerCase())>=0;
-                _fbHideLogin();_fbSetChip(_lgdSaved.email);return;
-              }
-              try{localStorage.removeItem('_lgd_u');}catch(e){}
-              _lgdSaved=null;
-              _fbShowLogin();return;
-            }
-
-            var email=(user.email||'').toLowerCase();
-            if(_ALLOWED.indexOf(email)<0){_auth.signOut();_fbShowLogin('E-mail não autorizado: '+user.email);return;}
-
-            window._fbUid=user.uid;window._fbEmail=user.email;
-            window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
-            try{localStorage.setItem('_lgd_u',JSON.stringify({uid:user.uid,email:user.email}));}catch(e){}
-            _lgdSaved={uid:user.uid,email:user.email};
-            _fbHideLogin();_fbSetChip(user.email);
-            _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync erro:',e.message);});
-
-          });
-
-        });
-
-
-
-      var btn=document.getElementById('fb-google-btn');
-
-      if(btn)btn.addEventListener('click',function(){
-
-        var errEl=document.getElementById('fb-login-err');
-
-        var lbl=document.getElementById('fb-btn-txt');
-
-        if(lbl)lbl.textContent='Abrindo login...';
-
-        if(errEl)errEl.textContent='';
-
-        // Tentar popup; se bloqueado, usar redirect (SESSION ja configurado acima)
-
-        _auth.signInWithPopup(_gprov).catch(function(e){
-
-          var bloqueado=e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request';
-
-          if(bloqueado){
-
-            if(lbl)lbl.textContent='Redirecionando...';
-
-            _auth.signInWithRedirect(_gprov).catch(function(e2){
-
-              if(errEl)errEl.textContent=(e2.code||'erro')+': '+e2.message.slice(0,120);
-
-              if(lbl)lbl.textContent='Entrar com Google';
-
-            });
-
-          }else{
-
-            if(errEl)errEl.textContent=(e.code||'erro')+': '+e.message.slice(0,120);
-
-            if(lbl)lbl.textContent='Entrar com Google';
-
-          }
-
-        });
-
+      // onAuthStateChanged: usado apenas para confirmar login real do Firebase
+      // Se Firebase diz null → NÃO fazer nada (localStorage já controla a sessão)
+      // Se Firebase diz user → salvar no localStorage e sincronizar dados
+      _auth.onAuthStateChanged(function(user){
+        if(!user){
+          // Null do Firebase não significa logout — só mostra login se localStorage tbm vazio
+          if(!_lgdSaved)_fbShowLogin();
+          return;
+        }
+        var email=(user.email||'').toLowerCase();
+        if(_ALLOWED.indexOf(email)<0){
+          _auth.signOut();
+          try{localStorage.removeItem('_lgd_u');}catch(e){}
+          _lgdSaved=null;
+          _fbShowLogin('E-mail não autorizado: '+user.email);
+          return;
+        }
+        window._fbUid=user.uid;window._fbEmail=user.email;
+        window._fbIsAdmin=_ADMIN.indexOf(email)>=0;
+        _lgdSaved={uid:user.uid,email:user.email};
+        try{localStorage.setItem('_lgd_u',JSON.stringify(_lgdSaved));}catch(e){}
+        _fbHideLogin();_fbSetChip(user.email);
+        _fbSync(user.uid,_auth,_db).catch(function(e){console.warn('[Firebase] sync:',e.message);});
       });
 
+      // Capturar redirect de login anterior (com timeout para não travar)
+      Promise.race([
+        _auth.getRedirectResult(),
+        new Promise(function(res){setTimeout(res,4000);})
+      ]).catch(function(e){console.warn('[Auth] redirect:',e.message);})
+        .finally(function(){window._fbEnableBtnOnce();});
 
+      // ── Botão Entrar com Google ──────────────────────────────────────────
+      var btn=document.getElementById('fb-google-btn');
+      if(btn)btn.addEventListener('click',function(){
+        var errEl=document.getElementById('fb-login-err');
+        var lbl=document.getElementById('fb-btn-txt');
+        if(lbl)lbl.textContent='Abrindo login...';
+        if(errEl)errEl.textContent='';
+        _auth.signInWithPopup(_gprov).catch(function(e){
+          var bloq=e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request';
+          if(bloq){
+            if(lbl)lbl.textContent='Redirecionando...';
+            _auth.signInWithRedirect(_gprov).catch(function(e2){
+              if(errEl)errEl.textContent='Erro ao entrar. Tente novamente.';
+              if(lbl)lbl.textContent='Entrar com Google';
+            });
+          }else{
+            if(errEl)errEl.textContent='Erro ao entrar. Tente novamente.';
+            if(lbl)lbl.textContent='Entrar com Google';
+          }
+        });
+      });
 
+      // ── Botão Sair ───────────────────────────────────────────────────────
       var chip=document.getElementById('fb-user-chip');
-
       if(chip)chip.addEventListener('click',function(){
-
         if(!confirm('Sair da conta?'))return;
-
+        try{localStorage.removeItem('_lgd_u');}catch(e){}
+        _lgdSaved=null;
         _auth.signOut();
-
         window._fbUid=null;window._fbEmail=null;window._fbIsAdmin=false;
-
         var c=document.getElementById('fb-user-chip');if(c)c.style.display='none';
-
+        _fbShowLogin();
       });
 
 
