@@ -1476,7 +1476,7 @@ const DB={
 
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch{return null}},
 
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(window._fbWrite)window._fbWrite(k,JSON.stringify(v));}catch{}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));if(window._fbWrite)window._fbWrite(k,v);}catch(e){if(e&&(e.name==='QuotaExceededError'||e.code===22))alert('Armazenamento cheio! Remova fotos ou dados antigos para liberar espaço.');}},
 
   keys(p){try{return Object.keys(localStorage).filter(k=>k.startsWith(p))}catch{return[]}},
 
@@ -1548,7 +1548,8 @@ let _mvRaf=null,_mvMountId=0;
 
 // ── Som de alerta ──────────────────────────────────────────────
 
-function beepSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);o.start();o.stop(ctx.currentTime+1);}catch(e){}}
+var _audioCtx=null;
+function beepSound(){try{if(!_audioCtx||_audioCtx.state==='closed')_audioCtx=new(window.AudioContext||window.webkitAudioContext)();const ctx=_audioCtx;if(ctx.state==='suspended')ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);o.start();o.stop(ctx.currentTime+1);}catch(e){}}
 
 // ── Recordes Pessoais ──────────────────────────────────────────
 
@@ -1589,16 +1590,14 @@ function calcDayStreak(){
   let n=0;
   const d=new Date();
   // não conta hoje se ainda não treinou (evita quebrar streak às 00h)
-  let checkToday=DB.keys().some(function(k){
-    if(!k.startsWith('workout:'+todayISO()))return false;
+  let checkToday=DB.keys('workout:'+todayISO()).some(function(k){
     const log=DB.get(k);
     return log&&Object.values(log).some(function(ex){return ex&&ex.sets&&ex.sets.some(function(s){return s.done;});});
   });
   if(!checkToday)d.setDate(d.getDate()-1);
   for(let i=0;i<365;i++){
     const iso=dateISO(d);
-    const hasW=DB.keys().some(function(k){
-      if(!k.startsWith('workout:'+iso+':'))return false;
+    const hasW=DB.keys('workout:'+iso+':').some(function(k){
       const log=DB.get(k);
       return log&&Object.values(log).some(function(ex){return ex&&ex.sets&&ex.sets.some(function(s){return s.done;});});
     });
@@ -1636,12 +1635,14 @@ function weeklyStats(){
 }
 
 // ── Gráfico de evolução de carga ───────────────────────────────
+var _wkKeysByDay={};
+function _getWkKeysByDay(dayId){if(!_wkKeysByDay[dayId])_wkKeysByDay[dayId]=DB.keys('workout:').filter(k=>k.endsWith(':'+dayId));return _wkKeysByDay[dayId];}
 
 function exProgressChart(exId,dayId){
 
   const pts=[];
 
-  DB.keys('workout:').filter(k=>k.endsWith(':'+dayId)).forEach(k=>{const log=DB.get(k);if(log&&log[exId]?.sets){const maxKg=Math.max(0,...log[exId].sets.filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));if(maxKg>0)pts.push({date:k.split(':')[1],kg:maxKg});}});
+  _getWkKeysByDay(dayId).forEach(k=>{const log=DB.get(k);if(log&&log[exId]?.sets){const maxKg=Math.max(0,...log[exId].sets.filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));if(maxKg>0)pts.push({date:k.split(':')[1],kg:maxKg});}});
 
   pts.sort((a,b)=>a.date>b.date?1:-1);
 
@@ -2007,31 +2008,22 @@ function _weekStart(){
 
 function _pesoList(){return DB.get('progress-weight')||[];}
 
-function _muscLastDay(g){
-
+// Calcula o último dia de cada grupo muscular em uma única passagem
+var _muscLastDayCache=null;
+function _muscLastDayAll(){
+  if(_muscLastDayCache)return _muscLastDayCache;
+  const result={};
   const keys=DB.keys('workout:').sort().reverse();
-
   for(let i=0;i<keys.length;i++){
-
     const log=DB.get(keys[i]);if(!log)continue;
-
-    const dayId=keys[i].split(':')[2];
-
     const dateStr=keys[i].split(':')[1];
-
-    const exIds=Object.keys(log).filter(function(id){return (log[id].sets||[]).some(function(s){return s.done;});});
-
-    for(let j=0;j<exIds.length;j++){
-
-      if((EX_MUS[exIds[j]]||[]).indexOf(g)>=0)return dateStr;
-
-    }
-
+    const exIds=Object.keys(log).filter(function(id){return(log[id].sets||[]).some(function(s){return s.done;});});
+    exIds.forEach(function(id){(EX_MUS[id]||[]).forEach(function(g){if(!result[g])result[g]=dateStr;});});
   }
-
-  return null;
-
+  _muscLastDayCache=result;
+  return result;
 }
+function _muscLastDay(g){return _muscLastDayAll()[g]||null;}
 
 
 
@@ -2043,6 +2035,10 @@ function renderPainel(){
 
   const firstWd=new Date(y,m,1).getDay();const dim=new Date(y,m+1,0).getDate();const today=todayISO();
 
+  // Pré-carrega todos os logs do mês em uma passagem (evita 28-31 DB.get individuais)
+  const _monPrefix=`workout:${String(y)}-${String(m+1).padStart(2,'0')}`;
+  const _monLogs={};DB.keys(_monPrefix).forEach(k=>{_monLogs[k]=DB.get(k)||{};});
+
   let cells='';
 
   for(let i=0;i<firstWd;i++)cells+='<div></div>';
@@ -2053,7 +2049,7 @@ function renderPainel(){
 
     let badge='',dot='';
 
-    if(dd){const log=DB.get(`workout:${iso}:${dd.id}`)||{};const exs=WORKOUTS[dd.id];const done=exs.filter(e=>log[e.id]?.done).length;const pct=Object.keys(log).length>0?Math.round((done/exs.length)*100):null;if(pct!==null){const bg=pct>=100?'#6B9E52':pct>=50?'#C45A1A':'#8C4012';badge=`<span class="cc-badge" style="background:${bg}">${pct}%</span>`;}else dot='<span class="cc-dot"></span>';}
+    if(dd){const log=_monLogs[`workout:${iso}:${dd.id}`]||{};const exs=WORKOUTS[dd.id];const done=exs.filter(e=>log[e.id]?.done).length;const pct=Object.keys(log).length>0?Math.round((done/exs.length)*100):null;if(pct!==null){const bg=pct>=100?'#6B9E52':pct>=50?'#C45A1A':'#8C4012';badge=`<span class="cc-badge" style="background:${bg}">${pct}%</span>`;}else dot='<span class="cc-dot"></span>';}
 
     cells+=`<div class="cc${isToday?' today':''}${dd?' click':''}" data-cal-day="${dd?dd.id:''}" data-cal-date="${iso}"><span class="cc-num">${d}</span>${badge||dot}</div>`;
 
@@ -2528,7 +2524,7 @@ function _admRender(){
     case'assign':   bd.innerHTML=_admRenderAssign();break;
   }
   const s=document.getElementById('adm-search');
-  if(s)s.addEventListener('input',function(){_AS.search=this.value;_admRender();});
+  if(s&&!s._admListenerAdded){s._admListenerAdded=true;s.addEventListener('input',function(){_AS.search=this.value;_admRender();});}
 }
 
 function _admLoadUsers(){
@@ -2823,7 +2819,7 @@ function renderTreino(){
 
     let histHtml='';
 
-    if(isHistOpen){const keys=DB.keys('workout:').filter(k=>k.endsWith(`:${dayId}`));const rows=[];keys.forEach(k=>{const e=DB.get(k);if(e&&e[ex.id]?.sets){const maxKg=Math.max(0,...(e[ex.id].sets||[]).filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));const maxReps=Math.max(0,...(e[ex.id].sets||[]).filter(s=>s.done&&s.reps).map(s=>parseInt(s.reps)||0));if(maxKg>0)rows.push({date:k.split(':')[1],w:maxKg,r:maxReps});}else if(e&&e[ex.id]&&(e[ex.id].weight||e[ex.id].reps)){rows.push({date:k.split(':')[1],w:e[ex.id].weight,r:e[ex.id].reps});}});rows.sort((a,b)=>a.date<b.date?1:-1);const chartSvg=exProgressChart(ex.id,dayId);const _lastKey=rows.length>0?keys.filter(k=>{const e=DB.get(k);return e&&e[ex.id]?.sets&&(e[ex.id].sets||[]).some(s=>s.done);}).sort().reverse()[0]:null;const _lastSets=_lastKey?((DB.get(_lastKey)||{})[ex.id]?.sets||[]).filter(s=>s.done):[];const _lastDate=_lastKey?_lastKey.split(':')[1]:null;let _lastHtml='';if(_lastSets.length){_lastHtml='<div class="ex-hist-sep">'+ (_lastDate||'ult. sessão')+'</div>';_lastSets.forEach(function(s,i){_lastHtml+='<div class="ex-hist-set">';_lastHtml+='<span class="ex-hist-set-n">'+(i+1)+'</span>';_lastHtml+='<span class="ex-hist-set-v">'+(s.kg||0)+' kg × '+(s.reps||0)+' reps</span>';if(s.comment)_lastHtml+='<span class="ex-hist-set-c"> · '+s.comment+'</span>';_lastHtml+='</div>';});}const _olderRows=_lastKey?rows.filter(h=>h.date!==(_lastDate||'')):rows;const _olderHtml=_olderRows.slice(0,4).map(h=>'<div class="hrow"><span class="hrow-date">'+h.date+'</span><span class="hrow-val">'+(h.w||'-')+' kg × '+(h.r||'-')+'</span></div>').join('');histHtml='<div class="ex-hist">'+(chartSvg||'')+(_lastHtml?_lastHtml:'')+(_olderHtml?'<div class="ex-hist-sep">Anteriores</div>'+_olderHtml:'')+(!_lastHtml&&!_olderHtml?'<p style="color:var(--tx2);font-size:.73rem">Sem registros.</p>':'')+'</div>';}
+    if(isHistOpen){const keys=_getWkKeysByDay(dayId);const rows=[];keys.forEach(k=>{const e=DB.get(k);if(e&&e[ex.id]?.sets){const maxKg=Math.max(0,...(e[ex.id].sets||[]).filter(s=>s.done&&s.kg).map(s=>parseFloat(s.kg)||0));const maxReps=Math.max(0,...(e[ex.id].sets||[]).filter(s=>s.done&&s.reps).map(s=>parseInt(s.reps)||0));if(maxKg>0)rows.push({date:k.split(':')[1],w:maxKg,r:maxReps});}else if(e&&e[ex.id]&&(e[ex.id].weight||e[ex.id].reps)){rows.push({date:k.split(':')[1],w:e[ex.id].weight,r:e[ex.id].reps});}});rows.sort((a,b)=>a.date<b.date?1:-1);const chartSvg=exProgressChart(ex.id,dayId);const _lastKey=rows.length>0?keys.filter(k=>{const e=DB.get(k);return e&&e[ex.id]?.sets&&(e[ex.id].sets||[]).some(s=>s.done);}).sort().reverse()[0]:null;const _lastSets=_lastKey?((DB.get(_lastKey)||{})[ex.id]?.sets||[]).filter(s=>s.done):[];const _lastDate=_lastKey?_lastKey.split(':')[1]:null;let _lastHtml='';if(_lastSets.length){_lastHtml='<div class="ex-hist-sep">'+ (_lastDate||'ult. sessão')+'</div>';_lastSets.forEach(function(s,i){_lastHtml+='<div class="ex-hist-set">';_lastHtml+='<span class="ex-hist-set-n">'+(i+1)+'</span>';_lastHtml+='<span class="ex-hist-set-v">'+(s.kg||0)+' kg × '+(s.reps||0)+' reps</span>';if(s.comment)_lastHtml+='<span class="ex-hist-set-c"> · '+s.comment+'</span>';_lastHtml+='</div>';});}const _olderRows=_lastKey?rows.filter(h=>h.date!==(_lastDate||'')):rows;const _olderHtml=_olderRows.slice(0,4).map(h=>'<div class="hrow"><span class="hrow-date">'+h.date+'</span><span class="hrow-val">'+(h.w||'-')+' kg × '+(h.r||'-')+'</span></div>').join('');histHtml='<div class="ex-hist">'+(chartSvg||'')+(_lastHtml?_lastHtml:'')+(_olderHtml?'<div class="ex-hist-sep">Anteriores</div>'+_olderHtml:'')+(!_lastHtml&&!_olderHtml?'<p style="color:var(--tx2);font-size:.73rem">Sem registros.</p>':'')+'</div>';}
 
     const muss=(EX_MUS[ex.id]||ex.muscles||[]).map(g=>MLBL[g]||g).join(', ');const pr=getPR(ex.id);const prBadge=pr?`<span class="pr-badge">🏆 PR ${pr.kg}kg</span>`:'';const _plan=_planN2(ex);const _doneSets=_doneSetsN;const _ringPct=_plan>0?Math.round(Math.min(100,_doneSets/_plan*100)):0;const _rc=done?'#6B9E52':(_doneSets>0?'#C45A1A':'var(--bd)');const _progRing=`<div class="ex-prog-ring${done?' done':''}" data-open-detail="${ex.id}" data-detail-day="${dayId}"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--sf2)" stroke-width="3.5"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="${_rc}" stroke-width="3.5" stroke-dasharray="${_ringPct} 100" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg><span class="ex-prog-ring-num">${entry.skipped?'\u23ed':(_doneSets+'/'+_plan)}</span></div>`;
 
@@ -4215,19 +4211,20 @@ function renderProgresso(){
 
     // Collect all workout sessions in period
 
-    const _allWkKeys=DB.keys('workout:').filter(k=>{const _d=k.split(':')[1];return _d>=_evoCutoff;});
+    // Loop único: coleta totais, byWeek, muscCounts e muscFirst/muscSecond em uma passagem
+    const _halfCut=(()=>{const s=new Date(_evoCutoff),e=new Date();const mid=new Date((s.getTime()+e.getTime())/2);return mid.toISOString().slice(0,10);})();
 
     let _totWk=0,_totSets=0,_totReps=0,_totVol=0,_totDurS=0,_wkDays=new Set();
 
     const _muscCounts={};let _maxPR=null,_prCount=0;
 
-    const _byWeek={};
+    const _byWeek={};const _muscFirst={},_muscSecond={};
 
-    _allWkKeys.forEach(k=>{
+    DB.keys('workout:').forEach(k=>{
 
       const parts=k.split(':');const _iso=parts[1],_day=parts[2];
 
-      if(!_iso||!_day)return;
+      if(!_iso||!_day||_iso<_evoCutoff)return;
 
       _wkDays.add(_iso+':'+_day);
 
@@ -4235,7 +4232,7 @@ function renderProgresso(){
 
       if(!_byWeek[_wnum])_byWeek[_wnum]={vol:0,sets:0};
 
-      const log=DB.get(k)||{};
+      const log=DB.get(k)||{};const bucket=_iso<_halfCut?_muscFirst:_muscSecond;
 
       Object.keys(log).forEach(exId=>{
 
@@ -4249,7 +4246,11 @@ function renderProgresso(){
 
           _totVol+=vol;_byWeek[_wnum].vol+=vol;_byWeek[_wnum].sets++;
 
-          (EX_MUS[exId]||[]).forEach(g=>{_muscCounts[g]=(_muscCounts[g]||0)+1;});
+          (EX_MUS[exId]||[]).forEach(g=>{
+            _muscCounts[g]=(_muscCounts[g]||0)+1;
+            if(!bucket[g])bucket[g]={vol:0,n:0};
+            bucket[g].vol+=vol;bucket[g].n++;
+          });
 
         });
 
@@ -4269,20 +4270,7 @@ function renderProgresso(){
 
     _prList.sort((a,b)=>b.pr.kg-a.pr.kg);
 
-    // Muscle progression index: compare first half vs second half of period
-
-    const _halfCut=(()=>{const s=new Date(_evoCutoff),e=new Date();const mid=new Date((s.getTime()+e.getTime())/2);return mid.toISOString().slice(0,10);})();
-
-    const _muscFirst={},_muscSecond={};
-
-    DB.keys('workout:').filter(k=>{const _d=k.split(':')[1];return _d>=_evoCutoff;}).forEach(k=>{
-
-      const _d=k.split(':')[1];const log=DB.get(k)||{};const bucket=_d<_halfCut?_muscFirst:_muscSecond;
-
-      Object.keys(log).forEach(exId=>{(EX_MUS[exId]||[]).forEach(g=>{if(!bucket[g])bucket[g]={vol:0,n:0};const sets=(log[exId]?.sets||[]).filter(s=>s.done);sets.forEach(s=>{bucket[g].vol+=(parseFloat(s.kg)||0)*(parseInt(s.reps)||0);bucket[g].n++;});});});
-
-    });
-
+    // Muscle progression index (já calculado no loop acima)
     const _muscIdx={};Object.keys({..._muscFirst,..._muscSecond}).forEach(g=>{const f=_muscFirst[g]||{vol:0,n:1};const s=_muscSecond[g]||{vol:0,n:1};const fa=f.vol/(f.n||1),sa=s.vol/(s.n||1);if(fa>0)_muscIdx[g]=Math.round((sa-fa)/fa*100);});
 
     // Periods bar
@@ -4490,7 +4478,7 @@ function _drawEvoCharts(){
 
   if(!S._evoCanvasData){return;}
 
-  const raf=()=>{
+  let _rafAttempts=0;const raf=()=>{
 
     const {weeks,weekVols,maxWV,selExId,selDayId}=S._evoCanvasData;
 
@@ -4518,7 +4506,7 @@ function _drawEvoCharts(){
 
       const pw=vc.parentElement?vc.parentElement.getBoundingClientRect().width:0;
 
-      if(pw<10){requestAnimationFrame(raf);return;}  // container ainda não renderizou
+      if(pw<10){if(++_rafAttempts<40)requestAnimationFrame(raf);return;}  // container ainda não renderizou
 
       const dpr=window.devicePixelRatio||1;
 
@@ -4818,9 +4806,9 @@ function _drawEvoCharts(){
 
 function renderContent(){switch(S.tab){case'painel':return renderPainel();case'treino':return renderTreino();case'musculos':return renderMusculos();case'dieta':return renderDieta();case'progresso':return renderProgresso();}}
 
-function mount(){closeCfg();if(S.tab!=='treino')closeWkBld();document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>c.classList.add('tab-anim'));_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function mount(){_muscLastDayCache=null;_wkKeysByDay={};closeCfg();if(S.tab!=='treino')closeWkBld();document.getElementById('bnav').innerHTML=renderNav();const c=document.getElementById('content');c.innerHTML=renderContent();c.classList.remove('tab-anim');requestAnimationFrame(()=>{c.classList.add('tab-anim');_initLazyPhotos();});_startPainelTimer();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
-function remountContent(){if(S.tab!=='treino')closeWkBld();document.getElementById('content').innerHTML=renderContent();if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
+function remountContent(){_muscLastDayCache=null;_wkKeysByDay={};if(S.tab!=='treino')closeWkBld();document.getElementById('content').innerHTML=renderContent();requestAnimationFrame(_initLazyPhotos);if(S.tab==='musculos')requestAnimationFrame(_mvInit);}
 
 // Cache de instruções dos exercícios (free-exercise-db)
 
@@ -5435,15 +5423,17 @@ document.getElementById('theme-btn').addEventListener('click',()=>{const isLight
 
 // ── Fotos de progresso ─────────────────────────────────────────────
 
-function compressPhoto(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const max=640;const cv=document.createElement('canvas');let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>max){w=Math.round(w*max/h);h=max;}cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);cb(cv.toDataURL('image/jpeg',.5));};img.src=e.target.result;};r.readAsDataURL(file);}
+function compressPhoto(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const max=400;const cv=document.createElement('canvas');let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>max){w=Math.round(w*max/h);h=max;}cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);cb(cv.toDataURL('image/jpeg',.35));};img.src=e.target.result;};r.readAsDataURL(file);}
 
 var _cmpSel=[];
+var _lazyObs=('IntersectionObserver' in window)?new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){var img=en.target;if(img.dataset.src){img.src=img.dataset.src;delete img.dataset.src;_lazyObs.unobserve(img);}});},{rootMargin:'80px'}):null;
+function _initLazyPhotos(){document.querySelectorAll('img.lz-photo[data-src]').forEach(function(img){if(_lazyObs)_lazyObs.observe(img);else{img.src=img.dataset.src;delete img.dataset.src;}});}
 function renderPhotos(){
   const photos=DB.get('progress-photos')||[];
   const inCmp=S.photoCmpMode;
   const thumbs=photos.map(function(p,i){
     const isSel=_cmpSel.includes(i);
-    return'<div class="photo-thumb'+(inCmp?' photo-sel-mode':'')+(isSel?' cmp-sel':'')+'"><img src="'+p.src+'" loading="lazy" data-photo-idx="'+i+'"><div class="photo-date">'+p.date+'</div>'+(inCmp?'':`<button class="photo-del" data-del-photo="${i}">✕</button>`)+'</div>';
+    return'<div class="photo-thumb'+(inCmp?' photo-sel-mode':'')+(isSel?' cmp-sel':'')+'"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="'+p.src+'" class="lz-photo" data-photo-idx="'+i+'"><div class="photo-date">'+p.date+'</div>'+(inCmp?'':`<button class="photo-del" data-del-photo="${i}">✕</button>`)+'</div>';
   }).join('');
   const cmpBar=inCmp?`<div class="photo-cmp-bar"><button data-cmp-cancel style="flex:1;padding:9px;border-radius:9px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-weight:700;font-size:.82rem">Cancelar</button><button data-cmp-confirm style="flex:1;padding:9px;border-radius:9px;background:var(--ru);color:#fff;font-weight:800;font-size:.82rem;border:none;opacity:${_cmpSel.length===2?1:.45}" ${_cmpSel.length!==2?'disabled':''}>Comparar (${_cmpSel.length}/2)</button></div>`:'';
   const addBtn=inCmp?'':`<button class="photo-add-btn" data-add-photo>${ico('plus',20,'#7A8898')}<span>Adicionar</span></button>`;
